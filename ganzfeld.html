@@ -163,18 +163,20 @@
             top: 20px;
             left: 20px;
             padding: 12px 20px;
-            background: rgba(30, 30, 30, 0.8);
+            background: rgba(30, 30, 30, 0.3);
             color: white;
-            border: 2px solid #4CAF50;
+            border: 2px solid rgba(0, 0, 0, 0.5);
             border-radius: 5px;
             cursor: pointer;
             z-index: 999;
             font-size: 1em;
             transition: all 0.3s;
+            backdrop-filter: blur(10px);
         }
 
         #toggle-menu-btn:hover {
-            background: rgba(30, 30, 30, 0.95);
+            background: rgba(30, 30, 30, 0.6);
+            border-color: rgba(76, 175, 80, 0.8);
             transform: scale(1.05);
         }
 
@@ -185,27 +187,30 @@
             transform: translateX(-50%);
             padding: 20px 50px;
             font-size: 1.5em;
-            background: #4CAF50;
+            background: rgba(76, 175, 80, 0.01);
             color: white;
-            border: none;
+            border: 2px solid rgba(0, 0, 0, 0.01);
             border-radius: 50px;
             cursor: pointer;
             z-index: 998;
             transition: all 0.3s;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            backdrop-filter: blur(10px);
         }
 
         #play-pause-btn:hover {
-            background: #45a049;
+            background: rgba(76, 175, 80, 0.01);
+            border-color: rgba(76, 175, 80, 0.01);
             transform: translateX(-50%) scale(1.05);
         }
 
         #play-pause-btn.playing {
-            background: #f44336;
+            background: rgba(244, 67, 54, 0.01);
+            border-color: rgba(244, 67, 54, 0.01);
         }
 
         #play-pause-btn.playing:hover {
-            background: #da190b;
+            background: rgba(244, 67, 54, 0.01);
+            border-color: rgba(244, 67, 54, 0.01);
         }
 
         .hidden-visually {
@@ -273,6 +278,35 @@
             font-size: 0.8em;
             opacity: 0.9;
             font-weight: 400;
+        }
+
+        #close-menu-btn {
+            width: 100%;
+            padding: 15px;
+            background: rgba(76, 175, 80, 0.8);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            margin-top: 10px;
+            transition: all 0.3s;
+        }
+
+        #close-menu-btn:hover {
+            background: rgba(76, 175, 80, 1);
+            transform: scale(1.02);
+        }
+
+        #screen-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            cursor: pointer;
         }
 
         @media (max-width: 600px) {
@@ -386,7 +420,13 @@
             </div>
             <div class="value-display" id="custom-freq-display">10 Hz</div>
         </div>
+
+        <!-- Close Menu Button -->
+        <button id="close-menu-btn">Close Menu</button>
     </div>
+
+    <!-- Screen Overlay for Play/Pause -->
+    <div id="screen-overlay"></div>
 
     <!-- Toggle Menu Button -->
     <button id="toggle-menu-btn">☰ Menu</button>
@@ -408,7 +448,9 @@
         const acceptWarningBtn = document.getElementById('accept-warning-btn');
         const menu = document.getElementById('menu');
         const toggleMenuBtn = document.getElementById('toggle-menu-btn');
+        const closeMenuBtn = document.getElementById('close-menu-btn');
         const playPauseBtn = document.getElementById('play-pause-btn');
+        const screenOverlay = document.getElementById('screen-overlay');
 
         const freqLeftInput = document.getElementById('freq-left');
         const freqRightInput = document.getElementById('freq-right');
@@ -536,13 +578,28 @@
             menu.classList.toggle('hidden');
         });
 
+        // Close menu button
+        closeMenuBtn.addEventListener('click', () => {
+            menu.classList.add('hidden');
+        });
+
         // Play/Pause functionality
-        playPauseBtn.addEventListener('click', () => {
+        function togglePlayPause() {
             if (!isPlaying) {
                 startExperiment();
             } else {
                 stopExperiment();
             }
+        }
+
+        playPauseBtn.addEventListener('click', (e) => {
+            e.stopPropagation(); // Prevent triggering screen overlay
+            togglePlayPause();
+        });
+
+        // Screen overlay click for play/pause
+        screenOverlay.addEventListener('click', () => {
+            togglePlayPause();
         });
 
         function startExperiment() {
