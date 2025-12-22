@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ganzfeld Experiment Simulator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+            transition: background-color 0.05s linear;
+        }
+
+        #warning-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            z-index: 10000;
+        }
+
+        #warning-screen h1 {
+            color: #ff4444;
+            margin-bottom: 30px;
+            font-size: 2em;
+        }
+
+        #warning-screen p {
+            max-width: 600px;
+            line-height: 1.6;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        #warning-screen button {
+            margin-top: 30px;
+            padding: 15px 40px;
+            font-size: 1.2em;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        #warning-screen button:hover {
+            background: #45a049;
+        }
+
+        #menu {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            max-width: 400px;
+            height: 100%;
+            background: rgba(30, 30, 30, 0.95);
+            color: white;
+            padding: 20px;
+            overflow-y: auto;
+            transform: translateX(0);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+        }
+
+        #menu.hidden {
+            transform: translateX(-100%);
+        }
+
+        .menu-section {
+            margin-bottom: 25px;
+        }
+
+        .menu-section label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #4CAF50;
+        }
+
+        .menu-section input[type="number"],
+        .menu-section input[type="range"],
+        .menu-section input[type="color"] {
+            width: 100%;
+            padding: 8px;
+            background: #444;
+            border: 1px solid #666;
+            color: white;
+            border-radius: 4px;
+        }
+
+        .menu-section input[type="color"] {
+            height: 50px;
+            cursor: pointer;
+        }
+
+        .freq-input-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .freq-input-group input[type="number"] {
+            flex: 1;
+        }
+
+        .freq-input-group span {
+            color: #aaa;
+            font-size: 0.9em;
+        }
+
+        .radio-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .radio-option {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            background: #444;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .radio-option:hover {
+            background: #555;
+        }
+
+        .radio-option input[type="radio"] {
+            cursor: pointer;
+        }
+
+        .value-display {
+            color: #4CAF50;
+            font-weight: bold;
+            margin-top: 5px;
+            font-size: 0.9em;
+        }
+
+        #toggle-menu-btn {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            padding: 12px 20px;
+            background: rgba(30, 30, 30, 0.8);
+            color: white;
+            border: 2px solid #4CAF50;
+            border-radius: 5px;
+            cursor: pointer;
+            z-index: 999;
+            font-size: 1em;
+            transition: all 0.3s;
+        }
+
+        #toggle-menu-btn:hover {
+            background: rgba(30, 30, 30, 0.95);
+            transform: scale(1.05);
+        }
+
+        #play-pause-btn {
+            position: fixed;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 20px 50px;
+            font-size: 1.5em;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            z-index: 998;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+
+        #play-pause-btn:hover {
+            background: #45a049;
+            transform: translateX(-50%) scale(1.05);
+        }
+
+        #play-pause-btn.playing {
+            background: #f44336;
+        }
+
+        #play-pause-btn.playing:hover {
+            background: #da190b;
+        }
+
+        .hidden-visually {
+            display: none;
+        }
+
+        .preset-buttons {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+            margin-bottom: 25px;
+        }
+
+        .preset-btn {
+            padding: 12px 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.95em;
+            font-weight: 600;
+            transition: all 0.3s;
+            text-align: left;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+
+        .preset-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+
+        .preset-btn:active {
+            transform: translateY(0);
+        }
+
+        .preset-btn.schumann {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .preset-btn.deep-theta {
+            background: linear-gradient(135deg, #4B0082 0%, #3F00FF 100%);
+        }
+
+        .preset-btn.alpha-theta {
+            background: linear-gradient(135deg, #FF8C00 0%, #FF6B00 100%);
+        }
+
+        .preset-btn.lunar {
+            background: linear-gradient(135deg, #C0C0C0 0%, #8B9DC3 100%);
+        }
+
+        .preset-btn.solar {
+            background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+        }
+
+        .preset-name {
+            display: block;
+            font-size: 1.05em;
+            margin-bottom: 4px;
+        }
+
+        .preset-desc {
+            display: block;
+            font-size: 0.8em;
+            opacity: 0.9;
+            font-weight: 400;
+        }
+
+        @media (max-width: 600px) {
+            #menu {
+                max-width: 100%;
+            }
+
+            #play-pause-btn {
+                padding: 15px 35px;
+                font-size: 1.2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Warning Screen -->
+    <div id="warning-screen">
+        <h1>⚠️ WARNING ⚠️</h1>
+        <p><strong>This application contains rapidly flashing lights and colors.</strong></p>
+        <p>If you or anyone in your family has a history of epilepsy or photosensitive seizures, DO NOT proceed.</p>
+        <p>Flashing lights, especially in the 15-25Hz range, can trigger seizures in susceptible individuals.</p>
+        <p>Use at your own risk. Take breaks if you feel discomfort, dizziness, or disorientation.</p>
+        <p><strong>By clicking "I Understand", you acknowledge these risks and agree to use this application responsibly.</strong></p>
+        <button id="accept-warning-btn">I Understand - Proceed</button>
+    </div>
+
+    <!-- Control Menu -->
+    <div id="menu">
+        <h2 style="margin-bottom: 20px; color: #4CAF50;">Ganzfeld Controls</h2>
+
+        <!-- Meditation Presets -->
+        <div class="menu-section">
+            <label>Meditation Presets</label>
+            <div class="preset-buttons">
+                <button class="preset-btn schumann" data-preset="schumann">
+                    <span class="preset-name">Schumann Resonance</span>
+                    <span class="preset-desc">7.83 Hz - Earth's frequency, deep meditation</span>
+                </button>
+                <button class="preset-btn deep-theta" data-preset="deep-theta">
+                    <span class="preset-name">Deep Theta</span>
+                    <span class="preset-desc">4.5 Hz - Shamanic states, REM, profound relaxation</span>
+                </button>
+                <button class="preset-btn alpha-theta" data-preset="alpha-theta">
+                    <span class="preset-name">Alpha-Theta Bridge</span>
+                    <span class="preset-desc">6 Hz - Creative visualization, hypnagogic imagery</span>
+                </button>
+                <button class="preset-btn lunar" data-preset="lunar">
+                    <span class="preset-name">Lunar Resonance</span>
+                    <span class="preset-desc">1.5 Hz - Moon's seismic tone, deep sleep, delta states</span>
+                </button>
+                <button class="preset-btn solar" data-preset="solar">
+                    <span class="preset-name">Solar Harmonic</span>
+                    <span class="preset-desc">0.5 Hz - Sun's cosmic frequency, ultra-deep meditation</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="menu-section">
+            <label>Left Channel Frequency</label>
+            <div class="freq-input-group">
+                <input type="number" id="freq-left" min="20" max="20000" value="440" step="1">
+                <span>Hz</span>
+            </div>
+            <div class="value-display" id="freq-left-display">440 Hz</div>
+        </div>
+
+        <div class="menu-section">
+            <label>Right Channel Frequency</label>
+            <div class="freq-input-group">
+                <input type="number" id="freq-right" min="20" max="20000" value="450" step="1">
+                <span>Hz</span>
+            </div>
+            <div class="value-display" id="freq-right-display">450 Hz</div>
+        </div>
+
+        <div class="menu-section">
+            <label>Binaural Beat Frequency</label>
+            <div class="value-display" id="beat-freq-display">10 Hz (Alpha)</div>
+        </div>
+
+        <div class="menu-section">
+            <label>Volume</label>
+            <input type="range" id="volume" min="0" max="100" value="50" step="1">
+            <div class="value-display" id="volume-display">50%</div>
+        </div>
+
+        <div class="menu-section">
+            <label>Flash Color</label>
+            <input type="color" id="color-picker" value="#FFFFFF">
+        </div>
+
+        <div class="menu-section">
+            <label>Flash Mode</label>
+            <div class="radio-group">
+                <label class="radio-option">
+                    <input type="radio" name="flash-mode" value="beat" checked>
+                    <span>Beat Frequency (Auto - based on audio difference)</span>
+                </label>
+                <label class="radio-option">
+                    <input type="radio" name="flash-mode" value="custom">
+                    <span>Custom Color Frequency</span>
+                </label>
+            </div>
+        </div>
+
+        <div class="menu-section" id="custom-freq-section">
+            <label>Custom Flash Frequency</label>
+            <div class="freq-input-group">
+                <input type="number" id="custom-freq" min="0.5" max="40" value="10" step="0.1">
+                <span>Hz</span>
+            </div>
+            <div class="value-display" id="custom-freq-display">10 Hz</div>
+        </div>
+    </div>
+
+    <!-- Toggle Menu Button -->
+    <button id="toggle-menu-btn">☰ Menu</button>
+
+    <!-- Play/Pause Button -->
+    <button id="play-pause-btn">▶ Play</button>
+
+    <script>
+        // Audio Context and nodes
+        let audioContext;
+        let leftOscillator, rightOscillator;
+        let leftGain, rightGain, masterGain;
+        let merger;
+        let isPlaying = false;
+        let flashInterval;
+
+        // DOM elements
+        const warningScreen = document.getElementById('warning-screen');
+        const acceptWarningBtn = document.getElementById('accept-warning-btn');
+        const menu = document.getElementById('menu');
+        const toggleMenuBtn = document.getElementById('toggle-menu-btn');
+        const playPauseBtn = document.getElementById('play-pause-btn');
+
+        const freqLeftInput = document.getElementById('freq-left');
+        const freqRightInput = document.getElementById('freq-right');
+        const volumeInput = document.getElementById('volume');
+        const colorPicker = document.getElementById('color-picker');
+        const customFreqInput = document.getElementById('custom-freq');
+        const customFreqSection = document.getElementById('custom-freq-section');
+
+        const freqLeftDisplay = document.getElementById('freq-left-display');
+        const freqRightDisplay = document.getElementById('freq-right-display');
+        const beatFreqDisplay = document.getElementById('beat-freq-display');
+        const volumeDisplay = document.getElementById('volume-display');
+        const customFreqDisplay = document.getElementById('custom-freq-display');
+
+        const flashModeRadios = document.querySelectorAll('input[name="flash-mode"]');
+
+        // Initialize
+        customFreqSection.style.display = 'none';
+
+        // Warning screen handler
+        acceptWarningBtn.addEventListener('click', () => {
+            warningScreen.style.display = 'none';
+            initAudioContext();
+        });
+
+        // Initialize Audio Context
+        function initAudioContext() {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+            // Create oscillators
+            leftOscillator = audioContext.createOscillator();
+            rightOscillator = audioContext.createOscillator();
+
+            leftOscillator.type = 'sine';
+            rightOscillator.type = 'sine';
+
+            leftOscillator.frequency.value = parseFloat(freqLeftInput.value);
+            rightOscillator.frequency.value = parseFloat(freqRightInput.value);
+
+            // Create gain nodes
+            leftGain = audioContext.createGain();
+            rightGain = audioContext.createGain();
+            masterGain = audioContext.createGain();
+
+            leftGain.gain.value = 1;
+            rightGain.gain.value = 1;
+            masterGain.gain.value = volumeInput.value / 100;
+
+            // Create channel merger for stereo
+            merger = audioContext.createChannelMerger(2);
+
+            // Connect nodes
+            leftOscillator.connect(leftGain);
+            rightOscillator.connect(rightGain);
+
+            leftGain.connect(merger, 0, 0); // Left channel
+            rightGain.connect(merger, 0, 1); // Right channel
+
+            merger.connect(masterGain);
+            masterGain.connect(audioContext.destination);
+
+            // Start oscillators (but muted until play is pressed)
+            masterGain.gain.value = 0;
+            leftOscillator.start();
+            rightOscillator.start();
+        }
+
+        // Update displays
+        function updateDisplays() {
+            const leftFreq = parseFloat(freqLeftInput.value);
+            const rightFreq = parseFloat(freqRightInput.value);
+            const beatFreq = Math.abs(leftFreq - rightFreq);
+
+            freqLeftDisplay.textContent = `${leftFreq} Hz`;
+            freqRightDisplay.textContent = `${rightFreq} Hz`;
+
+            let brainwaveType = '';
+            if (beatFreq < 4) brainwaveType = ' (Delta)';
+            else if (beatFreq < 8) brainwaveType = ' (Theta)';
+            else if (beatFreq < 13) brainwaveType = ' (Alpha)';
+            else if (beatFreq < 30) brainwaveType = ' (Beta)';
+            else brainwaveType = ' (Gamma)';
+
+            beatFreqDisplay.textContent = `${beatFreq.toFixed(2)} Hz${brainwaveType}`;
+            volumeDisplay.textContent = `${volumeInput.value}%`;
+            customFreqDisplay.textContent = `${customFreqInput.value} Hz`;
+
+            // Update oscillators if playing
+            if (leftOscillator) {
+                leftOscillator.frequency.value = leftFreq;
+                rightOscillator.frequency.value = rightFreq;
+            }
+        }
+
+        // Event listeners for inputs
+        freqLeftInput.addEventListener('input', updateDisplays);
+        freqRightInput.addEventListener('input', updateDisplays);
+        volumeInput.addEventListener('input', () => {
+            updateDisplays();
+            if (masterGain && isPlaying) {
+                masterGain.gain.value = volumeInput.value / 100;
+            }
+        });
+        customFreqInput.addEventListener('input', updateDisplays);
+
+        // Flash mode radio buttons
+        flashModeRadios.forEach(radio => {
+            radio.addEventListener('change', () => {
+                if (radio.value === 'custom') {
+                    customFreqSection.style.display = 'block';
+                } else {
+                    customFreqSection.style.display = 'none';
+                }
+
+                // Restart flashing if playing
+                if (isPlaying) {
+                    stopFlashing();
+                    startFlashing();
+                }
+            });
+        });
+
+        // Toggle menu
+        toggleMenuBtn.addEventListener('click', () => {
+            menu.classList.toggle('hidden');
+        });
+
+        // Play/Pause functionality
+        playPauseBtn.addEventListener('click', () => {
+            if (!isPlaying) {
+                startExperiment();
+            } else {
+                stopExperiment();
+            }
+        });
+
+        function startExperiment() {
+            isPlaying = true;
+            playPauseBtn.textContent = '⏸ Pause';
+            playPauseBtn.classList.add('playing');
+
+            // Resume audio context if suspended
+            if (audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+
+            // Unmute audio
+            masterGain.gain.value = volumeInput.value / 100;
+
+            // Start flashing
+            startFlashing();
+
+            // Hide menu when playing
+            menu.classList.add('hidden');
+        }
+
+        function stopExperiment() {
+            isPlaying = false;
+            playPauseBtn.textContent = '▶ Play';
+            playPauseBtn.classList.remove('playing');
+
+            // Mute audio
+            masterGain.gain.value = 0;
+
+            // Stop flashing
+            stopFlashing();
+
+            // Reset background
+            document.body.style.backgroundColor = '#000000';
+        }
+
+        function startFlashing() {
+            const flashMode = document.querySelector('input[name="flash-mode"]:checked').value;
+            let frequency;
+
+            if (flashMode === 'beat') {
+                const leftFreq = parseFloat(freqLeftInput.value);
+                const rightFreq = parseFloat(freqRightInput.value);
+                frequency = Math.abs(leftFreq - rightFreq);
+            } else {
+                frequency = parseFloat(customFreqInput.value);
+            }
+
+            if (frequency === 0 || frequency < 0.5) {
+                return; // Don't flash if frequency is too low
+            }
+
+            const interval = 1000 / frequency; // Convert Hz to milliseconds
+            const selectedColor = colorPicker.value;
+            let isColorOn = false;
+
+            flashInterval = setInterval(() => {
+                isColorOn = !isColorOn;
+                document.body.style.backgroundColor = isColorOn ? selectedColor : '#000000';
+            }, interval / 2); // Divide by 2 for on/off cycle
+        }
+
+        function stopFlashing() {
+            if (flashInterval) {
+                clearInterval(flashInterval);
+                flashInterval = null;
+            }
+        }
+
+        // Preset configurations based on neuroscience research
+        const presets = {
+            'schumann': {
+                leftFreq: 174,      // Solfeggio frequency - pain relief, relaxation
+                rightFreq: 181.83,  // Creates 7.83 Hz beat (Schumann Resonance)
+                color: '#4B0082',   // Indigo - third eye, spiritual experiences
+                flashMode: 'beat'
+            },
+            'deep-theta': {
+                leftFreq: 136.1,    // Om frequency (C# - cosmic tone)
+                rightFreq: 140.6,   // Creates 4.5 Hz beat (deep theta)
+                color: '#3F00FF',   // Deep violet - pineal activation
+                flashMode: 'beat'
+            },
+            'alpha-theta': {
+                leftFreq: 256,      // C note - scientific pitch, harmonious
+                rightFreq: 262,     // Creates 6 Hz beat (theta-alpha bridge)
+                color: '#FF8C00',   // Warm amber - relaxing, closed-eye visuals
+                flashMode: 'beat'
+            },
+            'lunar': {
+                leftFreq: 210.42,   // Synodic Moon frequency (cosmic octave tuning)
+                rightFreq: 211.92,  // Creates 1.5 Hz beat (Moon's seismic resonance)
+                color: '#C0C0C0',   // Silver - lunar, calming, dream states
+                flashMode: 'beat'
+            },
+            'solar': {
+                leftFreq: 126.22,   // Sun frequency (cosmic octave - OM solar equivalent)
+                rightFreq: 126.72,  // Creates 0.5 Hz beat (Sun's helioseismic oscillations)
+                color: '#FFD700',   // Golden - solar, vitality, grounding
+                flashMode: 'beat'
+            }
+        };
+
+        // Preset button handlers
+        document.querySelectorAll('.preset-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const presetName = btn.getAttribute('data-preset');
+                const preset = presets[presetName];
+
+                if (preset) {
+                    // Update frequency inputs
+                    freqLeftInput.value = preset.leftFreq;
+                    freqRightInput.value = preset.rightFreq;
+
+                    // Update color
+                    colorPicker.value = preset.color;
+
+                    // Set flash mode
+                    const flashModeRadio = document.querySelector(`input[name="flash-mode"][value="${preset.flashMode}"]`);
+                    if (flashModeRadio) {
+                        flashModeRadio.checked = true;
+                        if (preset.flashMode === 'custom') {
+                            customFreqSection.style.display = 'block';
+                        } else {
+                            customFreqSection.style.display = 'none';
+                        }
+                    }
+
+                    // Update displays
+                    updateDisplays();
+
+                    // If currently playing, restart with new settings
+                    if (isPlaying) {
+                        stopFlashing();
+                        startFlashing();
+                    }
+
+                    // Visual feedback
+                    btn.style.transform = 'scale(0.95)';
+                    setTimeout(() => {
+                        btn.style.transform = '';
+                    }, 150);
+                }
+            });
+        });
+
+        // Initialize displays
+        updateDisplays();
+    </script>
+</body>
+</html>
