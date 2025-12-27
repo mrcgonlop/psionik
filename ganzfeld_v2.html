@@ -510,6 +510,34 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Noise Layer -->
+            <div class="layer-section" id="noise-section">
+                <div class="checkbox-group">
+                    <input type="checkbox" id="noise-toggle">
+                    <label for="noise-toggle" class="layer-title">Noise Generator</label>
+                </div>
+                <div class="layer-controls">
+                    <div style="margin-top: 10px;">
+                        <label style="font-size: 0.9em;">Layer Volume</label>
+                        <input type="range" id="noise-volume" min="0" max="100" value="50" step="1">
+                        <div class="value-display" id="noise-volume-display">50%</div>
+                    </div>
+                    <div style="margin-top: 10px;">
+                        <label style="font-size: 0.9em;">Noise Type</label>
+                        <select id="noise-type" style="width: 100%; padding: 8px; background: #444; border: 1px solid #666; color: white; border-radius: 4px; cursor: pointer;">
+                            <option value="white">White Noise (Equal Energy)</option>
+                            <option value="pink">Pink Noise (1/f, Natural)</option>
+                            <option value="brown">Brown Noise (Deep, Rumbling)</option>
+                            <option value="violet">Violet Noise (High Frequency)</option>
+                            <option value="blue">Blue Noise (Crisp, Oceanic)</option>
+                        </select>
+                        <div class="value-display" style="font-size: 0.8em; margin-top: 5px; color: #888;">
+                            Uses cryptographically-secure random generation
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div class="menu-section">
@@ -581,6 +609,11 @@
         let monauralOsc1, monauralOsc2;
         let monauralGain;
 
+        // Noise layer nodes
+        let noiseBufferSource;
+        let noiseGainNode;
+        let noiseBuffer;
+
         // Master nodes
         let merger;
         let masterGain;
@@ -616,6 +649,11 @@
         const monauralBeatInput = document.getElementById('monaural-beat');
         const monauralVolumeInput = document.getElementById('monaural-volume');
 
+        // Noise controls
+        const noiseToggle = document.getElementById('noise-toggle');
+        const noiseVolumeInput = document.getElementById('noise-volume');
+        const noiseTypeSelect = document.getElementById('noise-type');
+
         // Other controls
         const volumeInput = document.getElementById('volume');
         const colorPicker = document.getElementById('color-picker');
@@ -633,6 +671,7 @@
         const monauralBaseDisplay = document.getElementById('monaural-base-display');
         const monauralBeatDisplay = document.getElementById('monaural-beat-display');
         const monauralVolumeDisplay = document.getElementById('monaural-volume-display');
+        const noiseVolumeDisplay = document.getElementById('noise-volume-display');
         const volumeDisplay = document.getElementById('volume-display');
         const customFreqDisplay = document.getElementById('custom-freq-display');
 
@@ -644,6 +683,7 @@
         // Initialize disabled states for unchecked layers
         document.getElementById('isochronic-section').classList.add('disabled');
         document.getElementById('monaural-section').classList.add('disabled');
+        document.getElementById('noise-section').classList.add('disabled');
 
         // Warning screen handler
         acceptWarningBtn.addEventListener('click', () => {
@@ -681,6 +721,9 @@
 
             // Initialize Monaural Beat Layer
             initMonauralLayer();
+
+            // Initialize Noise Layer
+            initNoiseLayer();
         }
 
         function initBinauralLayer() {
@@ -803,6 +846,119 @@
             monauralOsc2.start();
         }
 
+        function initNoiseLayer() {
+            // Create gain node first
+            noiseGainNode = audioContext.createGain();
+            const noiseBaseGain = 0.15; // Lower than other layers since noise is dense
+            const noiseVolumeMultiplier = noiseVolumeInput.value / 100;
+            const noiseEnabled = noiseToggle.checked ? 1 : 0;
+            noiseGainNode.gain.value = noiseBaseGain * noiseVolumeMultiplier * noiseEnabled;
+
+            // Connect gain to merger
+            noiseGainNode.connect(merger, 0, 0); // Left
+            noiseGainNode.connect(merger, 0, 1); // Right
+
+            // Generate noise buffer and start source
+            startNoiseSource();
+        }
+
+        function startNoiseSource() {
+            // Generate noise buffer with cryptographically-secure randomness
+            generateNoiseBuffer();
+
+            // Create buffer source
+            noiseBufferSource = audioContext.createBufferSource();
+            noiseBufferSource.buffer = noiseBuffer;
+            noiseBufferSource.loop = true;
+
+            // Connect to gain node
+            noiseBufferSource.connect(noiseGainNode);
+
+            // Start playback
+            noiseBufferSource.start();
+            console.log('Noise source started:', noiseTypeSelect.value, 'gain:', noiseGainNode.gain.value);
+        }
+
+        function generateNoiseBuffer() {
+            // Create 2-second buffer for looping noise
+            const bufferSize = audioContext.sampleRate * 2;
+            noiseBuffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
+            const output = noiseBuffer.getChannelData(0);
+
+            // Generate crypto-random bytes in chunks (max 65536 bytes per call)
+            const maxChunkSize = 65536;
+            const randomBytes = new Uint8Array(bufferSize);
+            for (let offset = 0; offset < bufferSize; offset += maxChunkSize) {
+                const chunkSize = Math.min(maxChunkSize, bufferSize - offset);
+                const chunk = new Uint8Array(chunkSize);
+                crypto.getRandomValues(chunk);
+                randomBytes.set(chunk, offset);
+            }
+
+            const noiseType = noiseTypeSelect.value;
+
+            if (noiseType === 'white') {
+                // White noise: Equal energy across all frequencies
+                for (let i = 0; i < bufferSize; i++) {
+                    // Convert uint8 (0-255) to float (-1 to 1)
+                    output[i] = (randomBytes[i] / 127.5) - 1.0;
+                }
+            } else if (noiseType === 'pink') {
+                // Pink noise: 1/f spectrum (natural, calming)
+                // Apply Voss-McCartney algorithm for pink noise
+                let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
+
+                for (let i = 0; i < bufferSize; i++) {
+                    const white = (randomBytes[i] / 127.5) - 1.0;
+                    b0 = 0.99886 * b0 + white * 0.0555179;
+                    b1 = 0.99332 * b1 + white * 0.0750759;
+                    b2 = 0.96900 * b2 + white * 0.1538520;
+                    b3 = 0.86650 * b3 + white * 0.3104856;
+                    b4 = 0.55000 * b4 + white * 0.5329522;
+                    b5 = -0.7616 * b5 - white * 0.0168980;
+                    output[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362) * 0.11;
+                    b6 = white * 0.115926;
+                }
+            } else if (noiseType === 'brown') {
+                // Brown noise (Brownian/red): Deep, rumbling, 1/f² spectrum
+                let lastOut = 0;
+                for (let i = 0; i < bufferSize; i++) {
+                    const white = (randomBytes[i] / 127.5) - 1.0;
+                    output[i] = (lastOut + (0.02 * white)) / 1.02;
+                    lastOut = output[i];
+                    output[i] *= 3.5; // Compensate for amplitude reduction
+                }
+            } else if (noiseType === 'violet') {
+                // Violet noise (differentiated white): High frequency emphasis
+                let lastWhite = 0;
+                for (let i = 0; i < bufferSize; i++) {
+                    const white = (randomBytes[i] / 127.5) - 1.0;
+                    output[i] = white - lastWhite;
+                    lastWhite = white;
+                }
+            } else if (noiseType === 'blue') {
+                // Blue noise: Crisp, oceanic sound, f spectrum
+                let lastOut = 0;
+                for (let i = 0; i < bufferSize; i++) {
+                    const white = (randomBytes[i] / 127.5) - 1.0;
+                    const blue = white - lastOut;
+                    lastOut = white;
+                    output[i] = blue;
+                }
+            }
+
+            // Normalize to prevent clipping
+            let max = 0;
+            for (let i = 0; i < bufferSize; i++) {
+                if (Math.abs(output[i]) > max) max = Math.abs(output[i]);
+            }
+            if (max > 0) {
+                for (let i = 0; i < bufferSize; i++) {
+                    output[i] /= max;
+                }
+            }
+        }
+
         // Helper function to get brainwave type from frequency
         function getBrainwaveType(freq) {
             if (freq < 4) return ' (Delta)';
@@ -841,6 +997,7 @@
             binauralVolumeDisplay.textContent = `${binauralVolumeInput.value}%`;
             isochronicVolumeDisplay.textContent = `${isochronicVolumeInput.value}%`;
             monauralVolumeDisplay.textContent = `${monauralVolumeInput.value}%`;
+            noiseVolumeDisplay.textContent = `${noiseVolumeInput.value}%`;
 
             // Other
             volumeDisplay.textContent = `${volumeInput.value}%`;
@@ -962,6 +1119,49 @@
                 section.classList.remove('disabled');
             } else {
                 section.classList.add('disabled');
+            }
+        });
+
+        noiseToggle.addEventListener('change', () => {
+            if (noiseGainNode) {
+                const noiseBaseGain = 0.15;
+                const noiseVolumeMultiplier = noiseVolumeInput.value / 100;
+                const noiseEnabled = noiseToggle.checked ? 1 : 0;
+                noiseGainNode.gain.value = noiseBaseGain * noiseVolumeMultiplier * noiseEnabled;
+                console.log('Noise toggle changed:', noiseToggle.checked, 'gain:', noiseGainNode.gain.value);
+            }
+            const section = document.getElementById('noise-section');
+            if (noiseToggle.checked) {
+                section.classList.remove('disabled');
+            } else {
+                section.classList.add('disabled');
+            }
+        });
+
+        noiseVolumeInput.addEventListener('input', () => {
+            if (noiseGainNode) {
+                const noiseBaseGain = 0.15;
+                const noiseVolumeMultiplier = noiseVolumeInput.value / 100;
+                const noiseEnabled = noiseToggle.checked ? 1 : 0;
+                noiseGainNode.gain.value = noiseBaseGain * noiseVolumeMultiplier * noiseEnabled;
+            }
+            updateDisplays();
+        });
+
+        noiseTypeSelect.addEventListener('change', () => {
+            // Regenerate noise buffer with new type
+            if (noiseBufferSource && audioContext) {
+                try {
+                    // Stop and disconnect old source
+                    noiseBufferSource.stop();
+                    noiseBufferSource.disconnect();
+                } catch (e) {
+                    // Source might not be started yet, ignore error
+                    console.log('Noise source stop error (ignored):', e);
+                }
+
+                // Start new source with new noise type
+                startNoiseSource();
             }
         });
 
