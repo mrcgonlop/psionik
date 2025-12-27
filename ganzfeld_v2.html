@@ -1,0 +1,1171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ganzfeld Experiment Simulator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+            transition: background-color 0.05s linear;
+        }
+
+        #warning-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            z-index: 10000;
+        }
+
+        #warning-screen h1 {
+            color: #ff4444;
+            margin-bottom: 30px;
+            font-size: 2em;
+        }
+
+        #warning-screen p {
+            max-width: 600px;
+            line-height: 1.6;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        #warning-screen button {
+            margin-top: 30px;
+            padding: 15px 40px;
+            font-size: 1.2em;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        #warning-screen button:hover {
+            background: #45a049;
+        }
+
+        #menu {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            max-width: 400px;
+            height: 100%;
+            background: rgba(30, 30, 30, 0.95);
+            color: white;
+            padding: 20px;
+            overflow-y: auto;
+            transform: translateX(0);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+        }
+
+        #menu.hidden {
+            transform: translateX(-100%);
+        }
+
+        .menu-section {
+            margin-bottom: 25px;
+        }
+
+        .menu-section label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #4CAF50;
+        }
+
+        .menu-section input[type="number"],
+        .menu-section input[type="range"],
+        .menu-section input[type="color"] {
+            width: 100%;
+            padding: 8px;
+            background: #444;
+            border: 1px solid #666;
+            color: white;
+            border-radius: 4px;
+        }
+
+        .menu-section input[type="color"] {
+            height: 50px;
+            cursor: pointer;
+        }
+
+        .freq-input-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .freq-input-group input[type="number"] {
+            flex: 1;
+        }
+
+        .freq-input-group span {
+            color: #aaa;
+            font-size: 0.9em;
+        }
+
+        .radio-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .radio-option {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            background: #444;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .radio-option:hover {
+            background: #555;
+        }
+
+        .radio-option input[type="radio"] {
+            cursor: pointer;
+        }
+
+        .value-display {
+            color: #4CAF50;
+            font-weight: bold;
+            margin-top: 5px;
+            font-size: 0.9em;
+        }
+
+        #toggle-menu-btn {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            padding: 12px 20px;
+            background: rgba(30, 30, 30, 0.3);
+            color: white;
+            border: 2px solid rgba(0, 0, 0, 0.5);
+            border-radius: 5px;
+            cursor: pointer;
+            z-index: 999;
+            font-size: 1em;
+            transition: all 0.3s;
+            backdrop-filter: blur(10px);
+        }
+
+        #toggle-menu-btn:hover {
+            background: rgba(30, 30, 30, 0.6);
+            border-color: rgba(76, 175, 80, 0.8);
+            transform: scale(1.05);
+        }
+
+        #play-pause-btn {
+            position: fixed;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 20px 50px;
+            font-size: 1.5em;
+            background: rgba(76, 175, 80, 0.01);
+            color: white;
+            border: 2px solid rgba(0, 0, 0, 0.01);
+            border-radius: 50px;
+            cursor: pointer;
+            z-index: 998;
+            transition: all 0.3s;
+            backdrop-filter: blur(10px);
+        }
+
+        #play-pause-btn:hover {
+            background: rgba(76, 175, 80, 0.01);
+            border-color: rgba(76, 175, 80, 0.01);
+            transform: translateX(-50%) scale(1.05);
+        }
+
+        #play-pause-btn.playing {
+            background: rgba(244, 67, 54, 0.01);
+            border-color: rgba(244, 67, 54, 0.01);
+        }
+
+        #play-pause-btn.playing:hover {
+            background: rgba(244, 67, 54, 0.01);
+            border-color: rgba(244, 67, 54, 0.01);
+        }
+
+        .hidden-visually {
+            display: none;
+        }
+
+        .preset-buttons {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+            margin-bottom: 25px;
+        }
+
+        .preset-btn {
+            padding: 12px 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.95em;
+            font-weight: 600;
+            transition: all 0.3s;
+            text-align: left;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+
+        .preset-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+
+        .preset-btn:active {
+            transform: translateY(0);
+        }
+
+        .preset-btn.schumann {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .preset-btn.deep-theta {
+            background: linear-gradient(135deg, #4B0082 0%, #3F00FF 100%);
+        }
+
+        .preset-btn.alpha-theta {
+            background: linear-gradient(135deg, #FF8C00 0%, #FF6B00 100%);
+        }
+
+        .preset-btn.lunar {
+            background: linear-gradient(135deg, #C0C0C0 0%, #8B9DC3 100%);
+        }
+
+        .preset-btn.solar {
+            background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+        }
+
+        .preset-name {
+            display: block;
+            font-size: 1.05em;
+            margin-bottom: 4px;
+        }
+
+        .preset-desc {
+            display: block;
+            font-size: 0.8em;
+            opacity: 0.9;
+            font-weight: 400;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            background: #444;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .checkbox-group:hover {
+            background: #555;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            cursor: pointer;
+            width: 18px;
+            height: 18px;
+        }
+
+        .checkbox-group label {
+            cursor: pointer;
+            margin: 0;
+            flex: 1;
+        }
+
+        .layer-section {
+            border: 1px solid #555;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .layer-section.disabled {
+            opacity: 0.5;
+        }
+
+        .layer-title {
+            font-size: 1.1em;
+            color: #4CAF50;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        #close-menu-btn {
+            width: 100%;
+            padding: 15px;
+            background: rgba(76, 175, 80, 0.8);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            margin-top: 10px;
+            transition: all 0.3s;
+        }
+
+        #close-menu-btn:hover {
+            background: rgba(76, 175, 80, 1);
+            transform: scale(1.02);
+        }
+
+        #screen-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            cursor: pointer;
+        }
+
+        @media (max-width: 600px) {
+            #menu {
+                max-width: 100%;
+            }
+
+            #play-pause-btn {
+                padding: 15px 35px;
+                font-size: 1.2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Warning Screen -->
+    <div id="warning-screen">
+        <h1>⚠️ WARNING ⚠️</h1>
+        <p><strong>This application contains rapidly flashing lights and colors.</strong></p>
+        <p>If you or anyone in your family has a history of epilepsy or photosensitive seizures, DO NOT proceed.</p>
+        <p>Flashing lights, especially in the 15-25Hz range, can trigger seizures in susceptible individuals.</p>
+        <p>Use at your own risk. Take breaks if you feel discomfort, dizziness, or disorientation.</p>
+        <p><strong>By clicking "I Understand", you acknowledge these risks and agree to use this application responsibly.</strong></p>
+        <button id="accept-warning-btn">I Understand - Proceed</button>
+    </div>
+
+    <!-- Control Menu -->
+    <div id="menu">
+        <h2 style="margin-bottom: 20px; color: #4CAF50;">Ganzfeld Controls</h2>
+
+        <!-- Meditation Presets -->
+        <div class="menu-section">
+            <label>Meditation Presets</label>
+            <div class="preset-buttons">
+                <button class="preset-btn schumann" data-preset="schumann">
+                    <span class="preset-name">Schumann Resonance</span>
+                    <span class="preset-desc">7.83 Hz - Earth's frequency, deep meditation</span>
+                </button>
+                <button class="preset-btn deep-theta" data-preset="deep-theta">
+                    <span class="preset-name">Deep Theta</span>
+                    <span class="preset-desc">4.5 Hz - Shamanic states, REM, profound relaxation</span>
+                </button>
+                <button class="preset-btn alpha-theta" data-preset="alpha-theta">
+                    <span class="preset-name">Alpha-Theta Bridge</span>
+                    <span class="preset-desc">6 Hz - Creative visualization, hypnagogic imagery</span>
+                </button>
+                <button class="preset-btn lunar" data-preset="lunar">
+                    <span class="preset-name">Lunar Resonance</span>
+                    <span class="preset-desc">1.5 Hz - Moon's seismic tone, deep sleep, delta states</span>
+                </button>
+                <button class="preset-btn solar" data-preset="solar">
+                    <span class="preset-name">Solar Harmonic</span>
+                    <span class="preset-desc">0.5 Hz - Sun's cosmic frequency, ultra-deep meditation</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Audio Layers -->
+        <div class="menu-section">
+            <label style="font-size: 1.2em; color: #FFD700; margin-bottom: 15px;">Audio Frequency Layers</label>
+
+            <!-- Binaural Beat Layer -->
+            <div class="layer-section" id="binaural-section">
+                <div class="checkbox-group">
+                    <input type="checkbox" id="binaural-toggle" checked>
+                    <label for="binaural-toggle" class="layer-title">Binaural Beat</label>
+                </div>
+                <div class="layer-controls">
+                    <div style="margin-top: 10px;">
+                        <label style="font-size: 0.9em;">Layer Volume</label>
+                        <input type="range" id="binaural-volume" min="0" max="100" value="100" step="1">
+                        <div class="value-display" id="binaural-volume-display">100%</div>
+                    </div>
+                    <div style="margin-top: 10px;">
+                        <label style="font-size: 0.9em;">Left Channel Frequency</label>
+                        <div class="freq-input-group">
+                            <input type="number" id="freq-left" min="20" max="20000" value="440" step="1">
+                            <span>Hz</span>
+                        </div>
+                        <div class="value-display" id="freq-left-display">440 Hz</div>
+                    </div>
+                    <div style="margin-top: 10px;">
+                        <label style="font-size: 0.9em;">Right Channel Frequency</label>
+                        <div class="freq-input-group">
+                            <input type="number" id="freq-right" min="20" max="20000" value="450" step="1">
+                            <span>Hz</span>
+                        </div>
+                        <div class="value-display" id="freq-right-display">450 Hz</div>
+                    </div>
+                    <div style="margin-top: 10px;">
+                        <label style="font-size: 0.9em;">Binaural Beat Frequency</label>
+                        <div class="value-display" id="beat-freq-display">10 Hz (Alpha)</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Isochronic Tone Layer -->
+            <div class="layer-section" id="isochronic-section">
+                <div class="checkbox-group">
+                    <input type="checkbox" id="isochronic-toggle">
+                    <label for="isochronic-toggle" class="layer-title">Isochronic Tone</label>
+                </div>
+                <div class="layer-controls">
+                    <div style="margin-top: 10px;">
+                        <label style="font-size: 0.9em;">Layer Volume</label>
+                        <input type="range" id="isochronic-volume" min="0" max="100" value="100" step="1">
+                        <div class="value-display" id="isochronic-volume-display">100%</div>
+                    </div>
+                    <div style="margin-top: 10px;">
+                        <label style="font-size: 0.9em;">Carrier Frequency</label>
+                        <div class="freq-input-group">
+                            <input type="number" id="isochronic-carrier" min="20" max="20000" value="200" step="1">
+                            <span>Hz</span>
+                        </div>
+                        <div class="value-display" id="isochronic-carrier-display">200 Hz</div>
+                    </div>
+                    <div style="margin-top: 10px;">
+                        <label style="font-size: 0.9em;">Pulse Frequency</label>
+                        <div class="freq-input-group">
+                            <input type="number" id="isochronic-pulse" min="0.5" max="40" value="8" step="0.1">
+                            <span>Hz</span>
+                        </div>
+                        <div class="value-display" id="isochronic-pulse-display">8 Hz (Theta)</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Monaural Beat Layer -->
+            <div class="layer-section" id="monaural-section">
+                <div class="checkbox-group">
+                    <input type="checkbox" id="monaural-toggle">
+                    <label for="monaural-toggle" class="layer-title">Monaural Beat</label>
+                </div>
+                <div class="layer-controls">
+                    <div style="margin-top: 10px;">
+                        <label style="font-size: 0.9em;">Layer Volume</label>
+                        <input type="range" id="monaural-volume" min="0" max="100" value="100" step="1">
+                        <div class="value-display" id="monaural-volume-display">100%</div>
+                    </div>
+                    <div style="margin-top: 10px;">
+                        <label style="font-size: 0.9em;">Base Frequency</label>
+                        <div class="freq-input-group">
+                            <input type="number" id="monaural-base" min="20" max="20000" value="300" step="1">
+                            <span>Hz</span>
+                        </div>
+                        <div class="value-display" id="monaural-base-display">300 Hz</div>
+                    </div>
+                    <div style="margin-top: 10px;">
+                        <label style="font-size: 0.9em;">Beat Frequency</label>
+                        <div class="freq-input-group">
+                            <input type="number" id="monaural-beat" min="0.5" max="40" value="6" step="0.1">
+                            <span>Hz</span>
+                        </div>
+                        <div class="value-display" id="monaural-beat-display">6 Hz (Theta)</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="menu-section">
+            <label>Volume</label>
+            <input type="range" id="volume" min="0" max="100" value="50" step="1">
+            <div class="value-display" id="volume-display">50%</div>
+        </div>
+
+        <div class="menu-section">
+            <label>Flash Color</label>
+            <input type="color" id="color-picker" value="#FFFFFF">
+        </div>
+
+        <div class="menu-section">
+            <label>Flash Mode</label>
+            <div class="radio-group">
+                <label class="radio-option">
+                    <input type="radio" name="flash-mode" value="beat" checked>
+                    <span>Beat Frequency (Auto - based on audio difference)</span>
+                </label>
+                <label class="radio-option">
+                    <input type="radio" name="flash-mode" value="custom">
+                    <span>Custom Color Frequency</span>
+                </label>
+                <label class="radio-option">
+                    <input type="radio" name="flash-mode" value="solid">
+                    <span>Solid Color (No flashing)</span>
+                </label>
+            </div>
+        </div>
+
+        <div class="menu-section" id="custom-freq-section">
+            <label>Custom Flash Frequency</label>
+            <div class="freq-input-group">
+                <input type="number" id="custom-freq" min="0.5" max="40" value="10" step="0.1">
+                <span>Hz</span>
+            </div>
+            <div class="value-display" id="custom-freq-display">10 Hz</div>
+        </div>
+
+        <!-- Close Menu Button -->
+        <button id="close-menu-btn">Close Menu</button>
+    </div>
+
+    <!-- Screen Overlay for Play/Pause -->
+    <div id="screen-overlay"></div>
+
+    <!-- Toggle Menu Button -->
+    <button id="toggle-menu-btn">☰ Menu</button>
+
+    <!-- Play/Pause Button -->
+    <button id="play-pause-btn">▶ Play</button>
+
+    <script>
+        // Audio Context and nodes
+        let audioContext;
+
+        // Binaural beat nodes
+        let leftOscillator, rightOscillator;
+        let leftGain, rightGain;
+        let binauralGain;
+
+        // Isochronic tone nodes
+        let isochronicOscillator;
+        let isochronicGainNode;
+        let isochronicLFO; // Sine wave LFO for smooth pulsing
+
+        // Monaural beat nodes
+        let monauralOsc1, monauralOsc2;
+        let monauralGain;
+
+        // Master nodes
+        let merger;
+        let masterGain;
+        let compressor; // Dynamics compressor to prevent clipping
+
+        let isPlaying = false;
+        let flashInterval;
+
+        // DOM elements
+        const warningScreen = document.getElementById('warning-screen');
+        const acceptWarningBtn = document.getElementById('accept-warning-btn');
+        const menu = document.getElementById('menu');
+        const toggleMenuBtn = document.getElementById('toggle-menu-btn');
+        const closeMenuBtn = document.getElementById('close-menu-btn');
+        const playPauseBtn = document.getElementById('play-pause-btn');
+        const screenOverlay = document.getElementById('screen-overlay');
+
+        // Binaural controls
+        const freqLeftInput = document.getElementById('freq-left');
+        const freqRightInput = document.getElementById('freq-right');
+        const binauralToggle = document.getElementById('binaural-toggle');
+        const binauralVolumeInput = document.getElementById('binaural-volume');
+
+        // Isochronic controls
+        const isochronicToggle = document.getElementById('isochronic-toggle');
+        const isochronicCarrierInput = document.getElementById('isochronic-carrier');
+        const isochronicPulseInput = document.getElementById('isochronic-pulse');
+        const isochronicVolumeInput = document.getElementById('isochronic-volume');
+
+        // Monaural controls
+        const monauralToggle = document.getElementById('monaural-toggle');
+        const monauralBaseInput = document.getElementById('monaural-base');
+        const monauralBeatInput = document.getElementById('monaural-beat');
+        const monauralVolumeInput = document.getElementById('monaural-volume');
+
+        // Other controls
+        const volumeInput = document.getElementById('volume');
+        const colorPicker = document.getElementById('color-picker');
+        const customFreqInput = document.getElementById('custom-freq');
+        const customFreqSection = document.getElementById('custom-freq-section');
+
+        // Displays
+        const freqLeftDisplay = document.getElementById('freq-left-display');
+        const freqRightDisplay = document.getElementById('freq-right-display');
+        const beatFreqDisplay = document.getElementById('beat-freq-display');
+        const binauralVolumeDisplay = document.getElementById('binaural-volume-display');
+        const isochronicCarrierDisplay = document.getElementById('isochronic-carrier-display');
+        const isochronicPulseDisplay = document.getElementById('isochronic-pulse-display');
+        const isochronicVolumeDisplay = document.getElementById('isochronic-volume-display');
+        const monauralBaseDisplay = document.getElementById('monaural-base-display');
+        const monauralBeatDisplay = document.getElementById('monaural-beat-display');
+        const monauralVolumeDisplay = document.getElementById('monaural-volume-display');
+        const volumeDisplay = document.getElementById('volume-display');
+        const customFreqDisplay = document.getElementById('custom-freq-display');
+
+        const flashModeRadios = document.querySelectorAll('input[name="flash-mode"]');
+
+        // Initialize
+        customFreqSection.style.display = 'none';
+
+        // Initialize disabled states for unchecked layers
+        document.getElementById('isochronic-section').classList.add('disabled');
+        document.getElementById('monaural-section').classList.add('disabled');
+
+        // Warning screen handler
+        acceptWarningBtn.addEventListener('click', () => {
+            warningScreen.style.display = 'none';
+            initAudioContext();
+        });
+
+        // Initialize Audio Context
+        function initAudioContext() {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+            // Create dynamics compressor to prevent clipping and ensure clean output
+            compressor = audioContext.createDynamicsCompressor();
+            compressor.threshold.value = -24; // Start compressing at -24dB
+            compressor.knee.value = 30; // Smooth compression curve
+            compressor.ratio.value = 12; // 12:1 ratio (strong limiting)
+            compressor.attack.value = 0.003; // 3ms attack (fast)
+            compressor.release.value = 0.25; // 250ms release (smooth)
+
+            // Master gain
+            masterGain = audioContext.createGain();
+            masterGain.gain.value = 0; // Start muted
+
+            // Audio chain: merger -> compressor -> masterGain -> destination
+            merger = audioContext.createChannelMerger(2);
+            merger.connect(compressor);
+            compressor.connect(masterGain);
+            masterGain.connect(audioContext.destination);
+
+            // Initialize Binaural Beat Layer
+            initBinauralLayer();
+
+            // Initialize Isochronic Tone Layer
+            initIsochronicLayer();
+
+            // Initialize Monaural Beat Layer
+            initMonauralLayer();
+        }
+
+        function initBinauralLayer() {
+            // Create oscillators
+            leftOscillator = audioContext.createOscillator();
+            rightOscillator = audioContext.createOscillator();
+
+            leftOscillator.type = 'sine';
+            rightOscillator.type = 'sine';
+
+            leftOscillator.frequency.value = parseFloat(freqLeftInput.value);
+            rightOscillator.frequency.value = parseFloat(freqRightInput.value);
+
+            // Create gain nodes
+            leftGain = audioContext.createGain();
+            rightGain = audioContext.createGain();
+            binauralGain = audioContext.createGain();
+
+            // Calculate gain: base level * volume slider * on/off
+            const baseGain = 0.25;
+            const volumeMultiplier = binauralVolumeInput.value / 100;
+            const isEnabled = binauralToggle.checked ? 1 : 0;
+            const finalGain = baseGain * volumeMultiplier * isEnabled;
+
+            leftGain.gain.value = finalGain;
+            rightGain.gain.value = finalGain;
+
+            // Connect nodes
+            leftOscillator.connect(leftGain);
+            rightOscillator.connect(rightGain);
+
+            leftGain.connect(merger, 0, 0); // Left channel
+            rightGain.connect(merger, 0, 1); // Right channel
+
+            // Start oscillators
+            leftOscillator.start();
+            rightOscillator.start();
+        }
+
+        function initIsochronicLayer() {
+            // Carrier oscillator (continuous tone at target frequency)
+            isochronicOscillator = audioContext.createOscillator();
+            isochronicOscillator.type = 'sine';
+            isochronicOscillator.frequency.value = parseFloat(isochronicCarrierInput.value);
+
+            // Sine wave LFO for smooth, artifact-free amplitude modulation
+            // Research shows sine wave pulses are most effective for entrainment
+            isochronicLFO = audioContext.createOscillator();
+            isochronicLFO.type = 'sine';
+            isochronicLFO.frequency.value = parseFloat(isochronicPulseInput.value);
+
+            // Gain node for amplitude modulation (controlled by LFO)
+            const isochronicAMGain = audioContext.createGain();
+            isochronicAMGain.gain.value = 0.5; // DC offset for unipolar modulation
+
+            // LFO gain to control modulation depth (creates the pulse effect)
+            const isochronicLFOGain = audioContext.createGain();
+            isochronicLFOGain.gain.value = 0.5; // Modulation depth (0.5 = full on/off range)
+
+            // Master gain for this layer (controlled by checkbox and volume slider)
+            isochronicGainNode = audioContext.createGain();
+            const isoBaseGain = 0.2;
+            const isoVolumeMultiplier = isochronicVolumeInput.value / 100;
+            const isoEnabled = isochronicToggle.checked ? 1 : 0;
+            isochronicGainNode.gain.value = isoBaseGain * isoVolumeMultiplier * isoEnabled;
+
+            // Connect: LFO modulates the AM gain
+            isochronicLFO.connect(isochronicLFOGain);
+            isochronicLFOGain.connect(isochronicAMGain.gain);
+
+            // Connect: Carrier -> AM Gain -> Master Gain -> Both Channels
+            isochronicOscillator.connect(isochronicAMGain);
+            isochronicAMGain.connect(isochronicGainNode);
+            isochronicGainNode.connect(merger, 0, 0); // Left
+            isochronicGainNode.connect(merger, 0, 1); // Right
+
+            // Start all oscillators
+            isochronicOscillator.start();
+            isochronicLFO.start();
+        }
+
+        function initMonauralLayer() {
+            // Create two oscillators with slightly different frequencies
+            monauralOsc1 = audioContext.createOscillator();
+            monauralOsc2 = audioContext.createOscillator();
+
+            monauralOsc1.type = 'sine';
+            monauralOsc2.type = 'sine';
+
+            const baseFreq = parseFloat(monauralBaseInput.value);
+            const beatFreq = parseFloat(monauralBeatInput.value);
+
+            monauralOsc1.frequency.value = baseFreq;
+            monauralOsc2.frequency.value = baseFreq + beatFreq;
+
+            // Individual oscillator gains to prevent clipping when mixed
+            const monaural1Gain = audioContext.createGain();
+            const monaural2Gain = audioContext.createGain();
+            monaural1Gain.gain.value = 0.1; // Reduced since these mix together
+            monaural2Gain.gain.value = 0.1;
+
+            // Master gain for this layer (controlled by checkbox and volume slider)
+            monauralGain = audioContext.createGain();
+            const monauralVolumeMultiplier = monauralVolumeInput.value / 100;
+            const monauralEnabled = monauralToggle.checked ? 1 : 0;
+            monauralGain.gain.value = monauralVolumeMultiplier * monauralEnabled;
+
+            // Mix both oscillators (monaural = mixed before ears)
+            monauralOsc1.connect(monaural1Gain);
+            monauralOsc2.connect(monaural2Gain);
+            monaural1Gain.connect(monauralGain);
+            monaural2Gain.connect(monauralGain);
+
+            // Send to both channels
+            monauralGain.connect(merger, 0, 0); // Left
+            monauralGain.connect(merger, 0, 1); // Right
+
+            // Start oscillators
+            monauralOsc1.start();
+            monauralOsc2.start();
+        }
+
+        // Helper function to get brainwave type from frequency
+        function getBrainwaveType(freq) {
+            if (freq < 4) return ' (Delta)';
+            else if (freq < 8) return ' (Theta)';
+            else if (freq < 13) return ' (Alpha)';
+            else if (freq < 30) return ' (Beta)';
+            else return ' (Gamma)';
+        }
+
+        // Update displays
+        function updateDisplays() {
+            // Binaural beat
+            const leftFreq = parseFloat(freqLeftInput.value);
+            const rightFreq = parseFloat(freqRightInput.value);
+            const beatFreq = Math.abs(leftFreq - rightFreq);
+
+            freqLeftDisplay.textContent = `${leftFreq} Hz`;
+            freqRightDisplay.textContent = `${rightFreq} Hz`;
+            beatFreqDisplay.textContent = `${beatFreq.toFixed(2)} Hz${getBrainwaveType(beatFreq)}`;
+
+            // Isochronic tone
+            const isoCarrier = parseFloat(isochronicCarrierInput.value);
+            const isoPulse = parseFloat(isochronicPulseInput.value);
+
+            isochronicCarrierDisplay.textContent = `${isoCarrier} Hz`;
+            isochronicPulseDisplay.textContent = `${isoPulse} Hz${getBrainwaveType(isoPulse)}`;
+
+            // Monaural beat
+            const monauralBase = parseFloat(monauralBaseInput.value);
+            const monauralBeat = parseFloat(monauralBeatInput.value);
+
+            monauralBaseDisplay.textContent = `${monauralBase} Hz`;
+            monauralBeatDisplay.textContent = `${monauralBeat} Hz${getBrainwaveType(monauralBeat)}`;
+
+            // Layer volumes
+            binauralVolumeDisplay.textContent = `${binauralVolumeInput.value}%`;
+            isochronicVolumeDisplay.textContent = `${isochronicVolumeInput.value}%`;
+            monauralVolumeDisplay.textContent = `${monauralVolumeInput.value}%`;
+
+            // Other
+            volumeDisplay.textContent = `${volumeInput.value}%`;
+            customFreqDisplay.textContent = `${customFreqInput.value} Hz`;
+
+            // Update oscillators if they exist
+            if (leftOscillator) {
+                leftOscillator.frequency.value = leftFreq;
+                rightOscillator.frequency.value = rightFreq;
+            }
+
+            if (isochronicOscillator) {
+                isochronicOscillator.frequency.value = isoCarrier;
+            }
+
+            if (isochronicLFO) {
+                isochronicLFO.frequency.value = isoPulse;
+            }
+
+            if (monauralOsc1) {
+                monauralOsc1.frequency.value = monauralBase;
+                monauralOsc2.frequency.value = monauralBase + monauralBeat;
+            }
+        }
+
+        // Event listeners for inputs
+        freqLeftInput.addEventListener('input', updateDisplays);
+        freqRightInput.addEventListener('input', updateDisplays);
+        isochronicCarrierInput.addEventListener('input', updateDisplays);
+
+        isochronicPulseInput.addEventListener('input', updateDisplays);
+
+        monauralBaseInput.addEventListener('input', updateDisplays);
+        monauralBeatInput.addEventListener('input', updateDisplays);
+        customFreqInput.addEventListener('input', updateDisplays);
+
+        volumeInput.addEventListener('input', () => {
+            updateDisplays();
+            if (masterGain && isPlaying) {
+                masterGain.gain.value = volumeInput.value / 100;
+            }
+        });
+
+        // Layer volume controls
+        binauralVolumeInput.addEventListener('input', () => {
+            updateDisplays();
+            if (leftGain && rightGain) {
+                const baseGain = 0.25;
+                const volumeMultiplier = binauralVolumeInput.value / 100;
+                const isEnabled = binauralToggle.checked ? 1 : 0;
+                const finalGain = baseGain * volumeMultiplier * isEnabled;
+                leftGain.gain.value = finalGain;
+                rightGain.gain.value = finalGain;
+            }
+        });
+
+        isochronicVolumeInput.addEventListener('input', () => {
+            updateDisplays();
+            if (isochronicGainNode) {
+                const isoBaseGain = 0.2;
+                const isoVolumeMultiplier = isochronicVolumeInput.value / 100;
+                const isoEnabled = isochronicToggle.checked ? 1 : 0;
+                isochronicGainNode.gain.value = isoBaseGain * isoVolumeMultiplier * isoEnabled;
+            }
+        });
+
+        monauralVolumeInput.addEventListener('input', () => {
+            updateDisplays();
+            if (monauralGain) {
+                const monauralVolumeMultiplier = monauralVolumeInput.value / 100;
+                const monauralEnabled = monauralToggle.checked ? 1 : 0;
+                monauralGain.gain.value = monauralVolumeMultiplier * monauralEnabled;
+            }
+        });
+
+        // Layer toggle listeners
+        binauralToggle.addEventListener('change', () => {
+            // Update both left and right channel gains with volume consideration
+            if (leftGain && rightGain) {
+                const baseGain = 0.25;
+                const volumeMultiplier = binauralVolumeInput.value / 100;
+                const isEnabled = binauralToggle.checked ? 1 : 0;
+                const finalGain = baseGain * volumeMultiplier * isEnabled;
+                leftGain.gain.value = finalGain;
+                rightGain.gain.value = finalGain;
+            }
+            const section = document.getElementById('binaural-section');
+            if (binauralToggle.checked) {
+                section.classList.remove('disabled');
+            } else {
+                section.classList.add('disabled');
+            }
+        });
+
+        isochronicToggle.addEventListener('change', () => {
+            if (isochronicGainNode) {
+                const isoBaseGain = 0.2;
+                const isoVolumeMultiplier = isochronicVolumeInput.value / 100;
+                const isoEnabled = isochronicToggle.checked ? 1 : 0;
+                isochronicGainNode.gain.value = isoBaseGain * isoVolumeMultiplier * isoEnabled;
+            }
+
+            const section = document.getElementById('isochronic-section');
+            if (isochronicToggle.checked) {
+                section.classList.remove('disabled');
+            } else {
+                section.classList.add('disabled');
+            }
+        });
+
+        monauralToggle.addEventListener('change', () => {
+            if (monauralGain) {
+                const monauralVolumeMultiplier = monauralVolumeInput.value / 100;
+                const monauralEnabled = monauralToggle.checked ? 1 : 0;
+                monauralGain.gain.value = monauralVolumeMultiplier * monauralEnabled;
+            }
+            const section = document.getElementById('monaural-section');
+            if (monauralToggle.checked) {
+                section.classList.remove('disabled');
+            } else {
+                section.classList.add('disabled');
+            }
+        });
+
+        // Flash mode radio buttons
+        flashModeRadios.forEach(radio => {
+            radio.addEventListener('change', () => {
+                if (radio.value === 'custom') {
+                    customFreqSection.style.display = 'block';
+                } else {
+                    customFreqSection.style.display = 'none';
+                }
+
+                // Restart flashing if playing
+                if (isPlaying) {
+                    stopFlashing();
+                    startFlashing();
+                }
+            });
+        });
+
+        // Toggle menu
+        toggleMenuBtn.addEventListener('click', () => {
+            menu.classList.toggle('hidden');
+        });
+
+        // Close menu button
+        closeMenuBtn.addEventListener('click', () => {
+            menu.classList.add('hidden');
+        });
+
+        // Play/Pause functionality
+        function togglePlayPause() {
+            if (!isPlaying) {
+                startExperiment();
+            } else {
+                stopExperiment();
+            }
+        }
+
+        playPauseBtn.addEventListener('click', (e) => {
+            e.stopPropagation(); // Prevent triggering screen overlay
+            togglePlayPause();
+        });
+
+        // Screen overlay click for play/pause
+        screenOverlay.addEventListener('click', () => {
+            togglePlayPause();
+        });
+
+        function startExperiment() {
+            isPlaying = true;
+            playPauseBtn.textContent = '⏸ Pause';
+            playPauseBtn.classList.add('playing');
+
+            // Resume audio context if suspended
+            if (audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+
+            // Unmute audio
+            masterGain.gain.value = volumeInput.value / 100;
+
+            // Start flashing
+            startFlashing();
+
+            // Hide menu when playing
+            menu.classList.add('hidden');
+        }
+
+        function stopExperiment() {
+            isPlaying = false;
+            playPauseBtn.textContent = '▶ Play';
+            playPauseBtn.classList.remove('playing');
+
+            // Mute audio
+            masterGain.gain.value = 0;
+
+            // Stop flashing
+            stopFlashing();
+
+            // Reset background
+            document.body.style.backgroundColor = '#000000';
+        }
+
+        function startFlashing() {
+            const flashMode = document.querySelector('input[name="flash-mode"]:checked').value;
+            const selectedColor = colorPicker.value;
+
+            if (flashMode === 'solid') {
+                // Solid color mode - no flashing
+                document.body.style.backgroundColor = selectedColor;
+                return;
+            }
+
+            let frequency;
+
+            if (flashMode === 'beat') {
+                const leftFreq = parseFloat(freqLeftInput.value);
+                const rightFreq = parseFloat(freqRightInput.value);
+                frequency = Math.abs(leftFreq - rightFreq);
+            } else {
+                frequency = parseFloat(customFreqInput.value);
+            }
+
+            if (frequency === 0 || frequency < 0.5) {
+                document.body.style.backgroundColor = '#000000';
+                return; // Don't flash if frequency is too low
+            }
+
+            const interval = 1000 / frequency; // Convert Hz to milliseconds
+            let isColorOn = false;
+
+            flashInterval = setInterval(() => {
+                isColorOn = !isColorOn;
+                document.body.style.backgroundColor = isColorOn ? selectedColor : '#000000';
+            }, interval / 2); // Divide by 2 for on/off cycle
+        }
+
+        function stopFlashing() {
+            if (flashInterval) {
+                clearInterval(flashInterval);
+                flashInterval = null;
+            }
+        }
+
+        // Preset configurations based on neuroscience research
+        const presets = {
+            'schumann': {
+                leftFreq: 174,      // Solfeggio frequency - pain relief, relaxation
+                rightFreq: 181.83,  // Creates 7.83 Hz beat (Schumann Resonance)
+                color: '#4B0082',   // Indigo - third eye, spiritual experiences
+                flashMode: 'beat'
+            },
+            'deep-theta': {
+                leftFreq: 136.1,    // Om frequency (C# - cosmic tone)
+                rightFreq: 140.6,   // Creates 4.5 Hz beat (deep theta)
+                color: '#3F00FF',   // Deep violet - pineal activation
+                flashMode: 'beat'
+            },
+            'alpha-theta': {
+                leftFreq: 256,      // C note - scientific pitch, harmonious
+                rightFreq: 262,     // Creates 6 Hz beat (theta-alpha bridge)
+                color: '#FF8C00',   // Warm amber - relaxing, closed-eye visuals
+                flashMode: 'beat'
+            },
+            'lunar': {
+                leftFreq: 210.42,   // Synodic Moon frequency (cosmic octave tuning)
+                rightFreq: 211.92,  // Creates 1.5 Hz beat (Moon's seismic resonance)
+                color: '#C0C0C0',   // Silver - lunar, calming, dream states
+                flashMode: 'beat'
+            },
+            'solar': {
+                leftFreq: 126.22,   // Sun frequency (cosmic octave - OM solar equivalent)
+                rightFreq: 126.72,  // Creates 0.5 Hz beat (Sun's helioseismic oscillations)
+                color: '#FFD700',   // Golden - solar, vitality, grounding
+                flashMode: 'beat'
+            }
+        };
+
+        // Preset button handlers
+        document.querySelectorAll('.preset-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const presetName = btn.getAttribute('data-preset');
+                const preset = presets[presetName];
+
+                if (preset) {
+                    // Update frequency inputs
+                    freqLeftInput.value = preset.leftFreq;
+                    freqRightInput.value = preset.rightFreq;
+
+                    // Update color
+                    colorPicker.value = preset.color;
+
+                    // Set flash mode
+                    const flashModeRadio = document.querySelector(`input[name="flash-mode"][value="${preset.flashMode}"]`);
+                    if (flashModeRadio) {
+                        flashModeRadio.checked = true;
+                        if (preset.flashMode === 'custom') {
+                            customFreqSection.style.display = 'block';
+                        } else {
+                            customFreqSection.style.display = 'none';
+                        }
+                    }
+
+                    // Update displays
+                    updateDisplays();
+
+                    // If currently playing, restart with new settings
+                    if (isPlaying) {
+                        stopFlashing();
+                        startFlashing();
+                    }
+
+                    // Visual feedback
+                    btn.style.transform = 'scale(0.95)';
+                    setTimeout(() => {
+                        btn.style.transform = '';
+                    }, 150);
+                }
+            });
+        });
+
+        // Initialize displays
+        updateDisplays();
+    </script>
+</body>
+</html>
