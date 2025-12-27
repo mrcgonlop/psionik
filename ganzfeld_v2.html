@@ -385,27 +385,27 @@
 
         <!-- Meditation Presets -->
         <div class="menu-section">
-            <label>Meditation Presets</label>
+            <label>Research-Based Presets</label>
             <div class="preset-buttons">
+                <button class="preset-btn gateway" data-preset="gateway">
+                    <span class="preset-name">Gateway Explorer</span>
+                    <span class="preset-desc">4 Hz Delta - Monroe/CIA OBE protocol, expanded consciousness</span>
+                </button>
+                <button class="preset-btn dmt" data-preset="dmt">
+                    <span class="preset-name">DMT Breakthrough</span>
+                    <span class="preset-desc">5 Hz Theta - Psychedelic brain patterns, visionary states</span>
+                </button>
+                <button class="preset-btn gamma" data-preset="gamma">
+                    <span class="preset-name">Theta-Gamma Transcendence</span>
+                    <span class="preset-desc">6 Hz + 40 Hz - Advanced meditation, cross-frequency coupling</span>
+                </button>
                 <button class="preset-btn schumann" data-preset="schumann">
                     <span class="preset-name">Schumann Resonance</span>
-                    <span class="preset-desc">7.83 Hz - Earth's frequency, deep meditation</span>
+                    <span class="preset-desc">7.83 Hz - Earth-body resonance, Bentov protocol</span>
                 </button>
-                <button class="preset-btn deep-theta" data-preset="deep-theta">
-                    <span class="preset-name">Deep Theta</span>
-                    <span class="preset-desc">4.5 Hz - Shamanic states, REM, profound relaxation</span>
-                </button>
-                <button class="preset-btn alpha-theta" data-preset="alpha-theta">
-                    <span class="preset-name">Alpha-Theta Bridge</span>
-                    <span class="preset-desc">6 Hz - Creative visualization, hypnagogic imagery</span>
-                </button>
-                <button class="preset-btn lunar" data-preset="lunar">
-                    <span class="preset-name">Lunar Resonance</span>
-                    <span class="preset-desc">1.5 Hz - Moon's seismic tone, deep sleep, delta states</span>
-                </button>
-                <button class="preset-btn solar" data-preset="solar">
-                    <span class="preset-name">Solar Harmonic</span>
-                    <span class="preset-desc">0.5 Hz - Sun's cosmic frequency, ultra-deep meditation</span>
+                <button class="preset-btn void" data-preset="void">
+                    <span class="preset-name">Deep Void</span>
+                    <span class="preset-desc">0.5 Hz - Extreme delta, entity contact, ego dissolution</span>
                 </button>
             </div>
         </div>
@@ -1287,37 +1287,56 @@
             }
         }
 
-        // Preset configurations based on neuroscience research
+        // Research-based preset configurations
+        // Sources: CIA Gateway Process, Monroe Institute, DMT studies, Bentov, Theta-Gamma coupling research
         const presets = {
+            'gateway': {
+                // Monroe Institute/CIA Gateway Process - Out-of-body exploration
+                binaural: { left: 440, right: 444, enabled: true, volume: 100 },  // 4 Hz Delta (OBE threshold)
+                isochronic: { carrier: 150, pulse: 7.5, enabled: true, volume: 80 },  // 7.5 Hz (Gateway sweet spot)
+                monaural: { base: 200, beat: 6, enabled: true, volume: 70 },  // 6 Hz Deep theta
+                noise: { type: 'pink', enabled: true, volume: 30 },  // Pink noise (natural spectrum)
+                color: '#4B0082',   // Indigo - third eye, Gateway vision
+                flashMode: 'custom',
+                customFreq: 4  // 4 Hz visual entrainment
+            },
+            'dmt': {
+                // DMT breakthrough - Psychedelic brain wave patterns
+                binaural: { left: 400, right: 405, enabled: true, volume: 100 },  // 5 Hz Theta (visionary state)
+                isochronic: { carrier: 180, pulse: 6.3, enabled: true, volume: 90 },  // 6.3 Hz Mid-theta REM
+                monaural: { base: 250, beat: 2.5, enabled: true, volume: 60 },  // 2.5 Hz Deep delta (ego dissolution)
+                noise: { type: 'white', enabled: true, volume: 40 },  // White noise (full spectrum)
+                color: '#FF00FF',   // Magenta - intense visionary states
+                flashMode: 'solid'  // No visual distraction during breakthrough
+            },
+            'gamma': {
+                // Theta-Gamma Transcendence - Advanced meditation cross-frequency coupling
+                binaural: { left: 440, right: 446, enabled: true, volume: 100 },  // 6 Hz Theta (meditation sweet spot)
+                isochronic: { carrier: 300, pulse: 40, enabled: true, volume: 85 },  // 40 Hz Gamma (synchrony)
+                monaural: { base: 150, beat: 6, enabled: true, volume: 75 },  // 6 Hz Theta reinforcement
+                noise: { type: 'brown', enabled: true, volume: 25 },  // Brown noise (grounding, deep focus)
+                color: '#9400D3',   // Violet - transcendent states
+                flashMode: 'custom',
+                customFreq: 6  // 6 Hz theta entrainment
+            },
             'schumann': {
-                leftFreq: 174,      // Solfeggio frequency - pain relief, relaxation
-                rightFreq: 181.83,  // Creates 7.83 Hz beat (Schumann Resonance)
-                color: '#4B0082',   // Indigo - third eye, spiritual experiences
-                flashMode: 'beat'
+                // Schumann Resonance - Bentov's Earth-body resonance protocol
+                binaural: { left: 432, right: 439.83, enabled: true, volume: 100 },  // 7.83 Hz (Schumann exact)
+                isochronic: { carrier: 174, pulse: 7.83, enabled: true, volume: 85 },  // 174 Hz Solfeggio + 7.83 Hz
+                monaural: { base: 528, beat: 7.83, enabled: true, volume: 70 },  // 528 Hz healing + 7.83 Hz
+                noise: { type: 'pink', enabled: true, volume: 35 },  // Pink noise (1/f natural)
+                color: '#228B22',   // Forest green - Earth connection
+                flashMode: 'custom',
+                customFreq: 7.83  // Schumann visual entrainment
             },
-            'deep-theta': {
-                leftFreq: 136.1,    // Om frequency (C# - cosmic tone)
-                rightFreq: 140.6,   // Creates 4.5 Hz beat (deep theta)
-                color: '#3F00FF',   // Deep violet - pineal activation
-                flashMode: 'beat'
-            },
-            'alpha-theta': {
-                leftFreq: 256,      // C note - scientific pitch, harmonious
-                rightFreq: 262,     // Creates 6 Hz beat (theta-alpha bridge)
-                color: '#FF8C00',   // Warm amber - relaxing, closed-eye visuals
-                flashMode: 'beat'
-            },
-            'lunar': {
-                leftFreq: 210.42,   // Synodic Moon frequency (cosmic octave tuning)
-                rightFreq: 211.92,  // Creates 1.5 Hz beat (Moon's seismic resonance)
-                color: '#C0C0C0',   // Silver - lunar, calming, dream states
-                flashMode: 'beat'
-            },
-            'solar': {
-                leftFreq: 126.22,   // Sun frequency (cosmic octave - OM solar equivalent)
-                rightFreq: 126.72,  // Creates 0.5 Hz beat (Sun's helioseismic oscillations)
-                color: '#FFD700',   // Golden - solar, vitality, grounding
-                flashMode: 'beat'
+            'void': {
+                // Deep Void - Extreme delta for entity contact, ego death
+                binaural: { left: 400, right: 400.5, enabled: true, volume: 100 },  // 0.5 Hz Delta (near-death frequency)
+                isochronic: { carrier: 200, pulse: 1, enabled: true, volume: 75 },  // 1 Hz Slow delta
+                monaural: { base: 150, beat: 2, enabled: true, volume: 65 },  // 2 Hz Delta reinforcement
+                noise: { type: 'brown', enabled: true, volume: 50 },  // Brown noise (ultra-deep grounding)
+                color: '#000033',   // Deep void blue - dissolution
+                flashMode: 'solid'  // Sensory deprivation
             }
         };
 
@@ -1328,9 +1347,103 @@
                 const preset = presets[presetName];
 
                 if (preset) {
-                    // Update frequency inputs
-                    freqLeftInput.value = preset.leftFreq;
-                    freqRightInput.value = preset.rightFreq;
+                    // Apply binaural layer settings
+                    freqLeftInput.value = preset.binaural.left;
+                    freqRightInput.value = preset.binaural.right;
+                    binauralToggle.checked = preset.binaural.enabled;
+                    binauralVolumeInput.value = preset.binaural.volume;
+
+                    // Update binaural section UI state
+                    if (preset.binaural.enabled) {
+                        document.getElementById('binaural-section').classList.remove('disabled');
+                    } else {
+                        document.getElementById('binaural-section').classList.add('disabled');
+                    }
+
+                    // Apply binaural gains if audio initialized
+                    if (leftGain && rightGain) {
+                        const baseGain = 0.25;
+                        const volumeMultiplier = preset.binaural.volume / 100;
+                        const isEnabled = preset.binaural.enabled ? 1 : 0;
+                        const finalGain = baseGain * volumeMultiplier * isEnabled;
+                        leftGain.gain.value = finalGain;
+                        rightGain.gain.value = finalGain;
+                    }
+
+                    // Apply isochronic layer settings
+                    isochronicCarrierInput.value = preset.isochronic.carrier;
+                    isochronicPulseInput.value = preset.isochronic.pulse;
+                    isochronicToggle.checked = preset.isochronic.enabled;
+                    isochronicVolumeInput.value = preset.isochronic.volume;
+
+                    // Update isochronic section UI state
+                    if (preset.isochronic.enabled) {
+                        document.getElementById('isochronic-section').classList.remove('disabled');
+                    } else {
+                        document.getElementById('isochronic-section').classList.add('disabled');
+                    }
+
+                    // Apply isochronic gains if audio initialized
+                    if (isochronicOscillator && isochronicLFO && isochronicGainNode) {
+                        isochronicOscillator.frequency.value = preset.isochronic.carrier;
+                        isochronicLFO.frequency.value = preset.isochronic.pulse;
+                        const isoBaseGain = 0.2;
+                        const isoVolumeMultiplier = preset.isochronic.volume / 100;
+                        const isoEnabled = preset.isochronic.enabled ? 1 : 0;
+                        isochronicGainNode.gain.value = isoBaseGain * isoVolumeMultiplier * isoEnabled;
+                    }
+
+                    // Apply monaural layer settings
+                    monauralBaseInput.value = preset.monaural.base;
+                    monauralBeatInput.value = preset.monaural.beat;
+                    monauralToggle.checked = preset.monaural.enabled;
+                    monauralVolumeInput.value = preset.monaural.volume;
+
+                    // Update monaural section UI state
+                    if (preset.monaural.enabled) {
+                        document.getElementById('monaural-section').classList.remove('disabled');
+                    } else {
+                        document.getElementById('monaural-section').classList.add('disabled');
+                    }
+
+                    // Apply monaural gains if audio initialized
+                    if (monauralOsc1 && monauralOsc2 && monauralGain) {
+                        monauralOsc1.frequency.value = preset.monaural.base;
+                        monauralOsc2.frequency.value = preset.monaural.base + preset.monaural.beat;
+                        const monauralVolumeMultiplier = preset.monaural.volume / 100;
+                        const monauralEnabled = preset.monaural.enabled ? 1 : 0;
+                        monauralGain.gain.value = monauralVolumeMultiplier * monauralEnabled;
+                    }
+
+                    // Apply noise layer settings
+                    noiseTypeSelect.value = preset.noise.type;
+                    noiseToggle.checked = preset.noise.enabled;
+                    noiseVolumeInput.value = preset.noise.volume;
+
+                    // Update noise section UI state
+                    if (preset.noise.enabled) {
+                        document.getElementById('noise-section').classList.remove('disabled');
+                    } else {
+                        document.getElementById('noise-section').classList.add('disabled');
+                    }
+
+                    // Apply noise settings and regenerate if audio initialized
+                    if (noiseBufferSource && audioContext && noiseGainNode) {
+                        // Update noise gain
+                        const noiseBaseGain = 0.15;
+                        const noiseVolumeMultiplier = preset.noise.volume / 100;
+                        const noiseEnabled = preset.noise.enabled ? 1 : 0;
+                        noiseGainNode.gain.value = noiseBaseGain * noiseVolumeMultiplier * noiseEnabled;
+
+                        // Regenerate noise with new type
+                        try {
+                            noiseBufferSource.stop();
+                            noiseBufferSource.disconnect();
+                        } catch (e) {
+                            console.log('Noise source stop error (ignored):', e);
+                        }
+                        startNoiseSource();
+                    }
 
                     // Update color
                     colorPicker.value = preset.color;
@@ -1341,15 +1454,18 @@
                         flashModeRadio.checked = true;
                         if (preset.flashMode === 'custom') {
                             customFreqSection.style.display = 'block';
+                            if (preset.customFreq) {
+                                customFreqInput.value = preset.customFreq;
+                            }
                         } else {
                             customFreqSection.style.display = 'none';
                         }
                     }
 
-                    // Update displays
+                    // Update all displays
                     updateDisplays();
 
-                    // If currently playing, restart with new settings
+                    // If currently playing, restart flashing with new settings
                     if (isPlaying) {
                         stopFlashing();
                         startFlashing();
