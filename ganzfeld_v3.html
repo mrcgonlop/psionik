@@ -1,0 +1,1467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ganzfeld V3 - Session-Based Entrainment</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+            background-color: #000000;
+            transition: background-color 0.05s linear;
+        }
+
+        #warning-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            z-index: 10000;
+        }
+
+        #warning-screen h1 {
+            color: #ff4444;
+            margin-bottom: 30px;
+            font-size: 2em;
+        }
+
+        #warning-screen p {
+            max-width: 600px;
+            line-height: 1.6;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        #warning-screen button {
+            margin-top: 30px;
+            padding: 15px 40px;
+            font-size: 1.2em;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        #warning-screen button:hover {
+            background: #45a049;
+        }
+
+        #menu {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            max-width: 450px;
+            height: 100%;
+            background: rgba(20, 20, 20, 0.98);
+            color: white;
+            padding: 20px;
+            overflow-y: auto;
+            transform: translateX(0);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+            border-right: 2px solid rgba(76, 175, 80, 0.3);
+        }
+
+        #menu.hidden {
+            transform: translateX(-100%);
+        }
+
+        .menu-header {
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid rgba(76, 175, 80, 0.5);
+        }
+
+        .menu-header h2 {
+            color: #4CAF50;
+            font-size: 1.8em;
+            margin-bottom: 5px;
+        }
+
+        .menu-header p {
+            color: #888;
+            font-size: 0.9em;
+        }
+
+        .phase-section {
+            background: rgba(40, 40, 40, 0.6);
+            border-left: 4px solid #4CAF50;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+        }
+
+        .phase-section.phase-1 { border-left-color: #2196F3; }
+        .phase-section.phase-2 { border-left-color: #9C27B0; }
+        .phase-section.phase-3 { border-left-color: #FF6F00; }
+        .phase-section.phase-4 { border-left-color: #00BCD4; }
+
+        .phase-title {
+            font-size: 1.3em;
+            font-weight: 600;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .phase-number {
+            background: rgba(76, 175, 80, 0.3);
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9em;
+        }
+
+        .control-group {
+            margin-bottom: 15px;
+        }
+
+        .control-group label {
+            display: block;
+            font-size: 0.95em;
+            margin-bottom: 8px;
+            color: #aaa;
+            font-weight: 500;
+        }
+
+        .control-group input[type="range"] {
+            width: 100%;
+            height: 6px;
+            background: #333;
+            border-radius: 3px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .control-group input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            background: #4CAF50;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .control-group input[type="range"]::-webkit-slider-thumb:hover {
+            background: #45a049;
+            transform: scale(1.2);
+        }
+
+        .control-group input[type="range"]::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            background: #4CAF50;
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+        }
+
+        .control-group input[type="number"] {
+            width: 100%;
+            padding: 8px;
+            background: #333;
+            border: 1px solid #555;
+            color: white;
+            border-radius: 4px;
+            font-size: 1em;
+        }
+
+        .control-group input[type="color"] {
+            width: 100%;
+            height: 50px;
+            background: #333;
+            border: 1px solid #555;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .value-display {
+            color: #4CAF50;
+            font-weight: 600;
+            margin-top: 5px;
+            font-size: 1em;
+        }
+
+        .dual-freq-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .triple-freq-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+        }
+
+        .freq-input-wrapper {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            margin-top: 5px;
+        }
+
+        .freq-input-wrapper input[type="number"] {
+            width: 80px;
+            padding: 6px;
+        }
+
+        .preset-buttons {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .preset-btn {
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.95em;
+            font-weight: 600;
+            transition: all 0.3s;
+            text-align: left;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+
+        .preset-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+        }
+
+        .preset-name {
+            display: block;
+            font-size: 1.1em;
+            margin-bottom: 4px;
+        }
+
+        .preset-desc {
+            display: block;
+            font-size: 0.8em;
+            opacity: 0.9;
+            font-weight: 400;
+        }
+
+        .preset-btn.quick-session {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+        }
+
+        .preset-btn.deep-theta {
+            background: linear-gradient(135deg, #9C27B0 0%, #7B1FA2 100%);
+        }
+
+        .preset-btn.gateway-journey {
+            background: linear-gradient(135deg, #FF6F00 0%, #F57C00 100%);
+        }
+
+        .global-controls {
+            background: rgba(60, 60, 60, 0.4);
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            border: 1px solid rgba(76, 175, 80, 0.3);
+        }
+
+        .global-controls h3 {
+            color: #4CAF50;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+
+        .noise-controls {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-top: 10px;
+        }
+
+        .checkbox-toggle {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+        }
+
+        .checkbox-toggle input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        #start-session-btn {
+            width: 100%;
+            padding: 20px;
+            font-size: 1.4em;
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            margin-top: 10px;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4);
+        }
+
+        #start-session-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(76, 175, 80, 0.6);
+        }
+
+        #start-session-btn:active {
+            transform: translateY(0);
+        }
+
+        #stop-session-btn {
+            width: 100%;
+            padding: 15px;
+            font-size: 1.2em;
+            background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            margin-top: 10px;
+            transition: all 0.3s;
+            display: none;
+        }
+
+        #stop-session-btn:hover {
+            background: linear-gradient(135deg, #e53935 0%, #c62828 100%);
+        }
+
+        #toggle-menu-btn {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            padding: 12px 20px;
+            background: rgba(30, 30, 30, 0.3);
+            color: white;
+            border: 2px solid rgba(76, 175, 80, 0.5);
+            border-radius: 5px;
+            cursor: pointer;
+            z-index: 999;
+            font-size: 1em;
+            transition: all 0.3s;
+            backdrop-filter: blur(10px);
+        }
+
+        #toggle-menu-btn:hover {
+            background: rgba(30, 30, 30, 0.6);
+            border-color: rgba(76, 175, 80, 0.8);
+            transform: scale(1.05);
+        }
+
+        #progress-container {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(20, 20, 20, 0.95);
+            padding: 20px;
+            z-index: 998;
+            display: none;
+            border-top: 2px solid rgba(76, 175, 80, 0.5);
+        }
+
+        #progress-container.active {
+            display: block;
+        }
+
+        .progress-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            color: white;
+        }
+
+        .current-phase {
+            font-size: 1.2em;
+            font-weight: 600;
+            color: #4CAF50;
+        }
+
+        .time-remaining {
+            font-size: 1em;
+            color: #aaa;
+        }
+
+        #progress-bar-container {
+            width: 100%;
+            height: 8px;
+            background: #333;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+
+        #progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #4CAF50 0%, #45a049 100%);
+            width: 0%;
+            transition: width 0.5s linear;
+        }
+
+        .phase-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85em;
+            color: #666;
+        }
+
+        .phase-label {
+            flex: 1;
+            text-align: center;
+        }
+
+        .phase-label.active {
+            color: #4CAF50;
+            font-weight: 600;
+        }
+
+        select {
+            width: 100%;
+            padding: 8px;
+            background: #333;
+            border: 1px solid #555;
+            color: white;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1em;
+        }
+
+        @media (max-width: 600px) {
+            #menu {
+                max-width: 100%;
+            }
+
+            .dual-freq-container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Warning Screen -->
+    <div id="warning-screen">
+        <h1>⚠️ WARNING ⚠️</h1>
+        <p><strong>This application contains rapidly flashing lights and audio frequencies.</strong></p>
+        <p>If you or anyone in your family has a history of epilepsy or photosensitive seizures, DO NOT proceed.</p>
+        <p>Flashing lights and certain frequencies can trigger seizures in susceptible individuals.</p>
+        <p>Use at your own risk. Take breaks if you feel discomfort, dizziness, or disorientation.</p>
+        <p><strong>By clicking "I Understand", you acknowledge these risks and agree to use this application responsibly.</strong></p>
+        <button id="accept-warning-btn">I Understand - Proceed</button>
+    </div>
+
+    <!-- Control Menu -->
+    <div id="menu">
+        <div class="menu-header">
+            <h2>Ganzfeld V3</h2>
+            <p>Session-Based Brainwave Entrainment</p>
+        </div>
+
+        <!-- Presets -->
+        <div class="global-controls">
+            <h3>Session Presets</h3>
+            <div class="preset-buttons">
+                <button class="preset-btn quick-session" data-preset="quick">
+                    <span class="preset-name">⚡ Quick Focus (15min)</span>
+                    <span class="preset-desc">12→10 Hz Alpha descent for relaxation and focus</span>
+                </button>
+                <button class="preset-btn deep-theta" data-preset="deep-theta">
+                    <span class="preset-name">🌀 Deep Theta Journey (30min)</span>
+                    <span class="preset-desc">6 Hz Theta + 40 Hz Gamma for meditation states</span>
+                </button>
+                <button class="preset-btn gateway-journey" data-preset="gateway">
+                    <span class="preset-name">🚀 Gateway Experience (60min)</span>
+                    <span class="preset-desc">Full progression with ultra-gamma peak - Monroe/CIA protocol</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Global Controls -->
+        <div class="global-controls">
+            <h3>Global Settings</h3>
+
+            <div class="control-group">
+                <label>Master Volume</label>
+                <input type="range" id="master-volume" min="0" max="100" value="50" step="1">
+                <div class="value-display" id="master-volume-display">50%</div>
+            </div>
+
+            <div class="control-group">
+                <label>Noise Layer</label>
+                <div class="noise-controls">
+                    <label class="checkbox-toggle">
+                        <input type="checkbox" id="noise-enabled">
+                        <span>Enable</span>
+                    </label>
+                    <select id="noise-type">
+                        <option value="pink">Pink Noise</option>
+                        <option value="white">White Noise</option>
+                        <option value="brown">Brown Noise</option>
+                    </select>
+                </div>
+                <input type="range" id="noise-volume" min="0" max="100" value="30" step="1" style="margin-top: 10px;">
+                <div class="value-display" id="noise-volume-display">30%</div>
+            </div>
+        </div>
+
+        <!-- Phase 1: Preparation -->
+        <div class="phase-section phase-1">
+            <div class="phase-title">
+                <span class="phase-number">1</span>
+                <span>Preparation</span>
+            </div>
+
+            <div class="control-group">
+                <label>Target Frequency</label>
+                <input type="range" id="phase1-freq" min="0.5" max="30" value="10" step="0.1">
+                <div class="freq-input-wrapper">
+                    <input type="number" id="phase1-freq-input" min="0.5" max="30" value="10" step="0.1">
+                    <span style="color: #888;">Hz</span>
+                </div>
+                <div class="value-display" id="phase1-freq-display">10 Hz (Alpha)</div>
+            </div>
+
+            <div class="control-group">
+                <label>Duration (minutes)</label>
+                <input type="range" id="phase1-duration" min="1" max="30" value="5" step="1">
+                <div class="value-display" id="phase1-duration-display">5 min</div>
+            </div>
+
+            <div class="control-group">
+                <label>Visual Color</label>
+                <input type="color" id="phase1-color" value="#2196F3">
+            </div>
+        </div>
+
+        <!-- Phase 2: Ascent -->
+        <div class="phase-section phase-2">
+            <div class="phase-title">
+                <span class="phase-number">2</span>
+                <span>Ascent</span>
+            </div>
+
+            <div class="dual-freq-container">
+                <div class="control-group">
+                    <label>Frequency 1 (Theta)</label>
+                    <input type="range" id="phase2-freq1" min="0.5" max="30" value="6" step="0.1">
+                    <div class="freq-input-wrapper">
+                        <input type="number" id="phase2-freq1-input" min="0.5" max="30" value="6" step="0.1">
+                        <span style="color: #888;">Hz</span>
+                    </div>
+                    <div class="value-display" id="phase2-freq1-display">6 Hz (Theta)</div>
+                </div>
+
+                <div class="control-group">
+                    <label>Frequency 2 (Gamma)</label>
+                    <input type="range" id="phase2-freq2" min="0" max="100" value="40" step="1">
+                    <div class="freq-input-wrapper">
+                        <input type="number" id="phase2-freq2-input" min="0" max="100" value="40" step="1">
+                        <span style="color: #888;">Hz</span>
+                    </div>
+                    <div class="value-display" id="phase2-freq2-display">40 Hz (Gamma)</div>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label>Duration (minutes)</label>
+                <input type="range" id="phase2-duration" min="1" max="30" value="10" step="1">
+                <div class="value-display" id="phase2-duration-display">10 min</div>
+            </div>
+
+            <div class="control-group">
+                <label>Visual Color</label>
+                <input type="color" id="phase2-color" value="#9C27B0">
+            </div>
+        </div>
+
+        <!-- Phase 3: Peak/Sustain -->
+        <div class="phase-section phase-3">
+            <div class="phase-title">
+                <span class="phase-number">3</span>
+                <span>Peak / Sustain</span>
+            </div>
+
+            <div class="triple-freq-container">
+                <div class="control-group">
+                    <label>Freq 1 (Theta)</label>
+                    <input type="range" id="phase3-freq1" min="0.5" max="30" value="6" step="0.1">
+                    <div class="freq-input-wrapper">
+                        <input type="number" id="phase3-freq1-input" min="0.5" max="30" value="6" step="0.1">
+                        <span style="color: #888;">Hz</span>
+                    </div>
+                    <div class="value-display" id="phase3-freq1-display">6 Hz (Theta)</div>
+                </div>
+
+                <div class="control-group">
+                    <label>Freq 2 (Gamma)</label>
+                    <input type="range" id="phase3-freq2" min="0" max="100" value="40" step="1">
+                    <div class="freq-input-wrapper">
+                        <input type="number" id="phase3-freq2-input" min="0" max="100" value="40" step="1">
+                        <span style="color: #888;">Hz</span>
+                    </div>
+                    <div class="value-display" id="phase3-freq2-display">40 Hz (Gamma)</div>
+                </div>
+
+                <div class="control-group">
+                    <label>Freq 3 (Ultra-γ)</label>
+                    <input type="range" id="phase3-freq3" min="0" max="150" value="0" step="1">
+                    <div class="freq-input-wrapper">
+                        <input type="number" id="phase3-freq3-input" min="0" max="150" value="0" step="1">
+                        <span style="color: #888;">Hz</span>
+                    </div>
+                    <div class="value-display" id="phase3-freq3-display">Off</div>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label>Duration (minutes)</label>
+                <input type="range" id="phase3-duration" min="1" max="60" value="15" step="1">
+                <div class="value-display" id="phase3-duration-display">15 min</div>
+            </div>
+
+            <div class="control-group">
+                <label>Visual Color</label>
+                <input type="color" id="phase3-color" value="#FF6F00">
+            </div>
+        </div>
+
+        <!-- Phase 4: Return -->
+        <div class="phase-section phase-4">
+            <div class="phase-title">
+                <span class="phase-number">4</span>
+                <span>Return</span>
+            </div>
+
+            <div class="control-group">
+                <label>Target Frequency</label>
+                <input type="range" id="phase4-freq" min="0.5" max="30" value="10" step="0.1">
+                <div class="freq-input-wrapper">
+                    <input type="number" id="phase4-freq-input" min="0.5" max="30" value="10" step="0.1">
+                    <span style="color: #888;">Hz</span>
+                </div>
+                <div class="value-display" id="phase4-freq-display">10 Hz (Alpha)</div>
+            </div>
+
+            <div class="control-group">
+                <label>Duration (minutes)</label>
+                <input type="range" id="phase4-duration" min="1" max="30" value="10" step="1">
+                <div class="value-display" id="phase4-duration-display">10 min</div>
+            </div>
+
+            <div class="control-group">
+                <label>Visual Color</label>
+                <input type="color" id="phase4-color" value="#00BCD4">
+            </div>
+        </div>
+
+        <button id="start-session-btn">▶ Start Session</button>
+        <button id="stop-session-btn">⏹ Stop Session</button>
+    </div>
+
+    <!-- Toggle Menu Button -->
+    <button id="toggle-menu-btn">☰ Menu</button>
+
+    <!-- Progress Bar -->
+    <div id="progress-container">
+        <div class="progress-info">
+            <span class="current-phase" id="current-phase-text">Phase 1: Preparation</span>
+            <span class="time-remaining" id="time-remaining">0:00 / 0:00</span>
+        </div>
+        <div id="progress-bar-container">
+            <div id="progress-bar"></div>
+        </div>
+        <div class="phase-labels">
+            <span class="phase-label" id="label-phase1">Preparation</span>
+            <span class="phase-label" id="label-phase2">Ascent</span>
+            <span class="phase-label" id="label-phase3">Peak</span>
+            <span class="phase-label" id="label-phase4">Return</span>
+        </div>
+    </div>
+
+    <script>
+        // Audio Context and nodes
+        let audioContext;
+        let masterGain;
+        let compressor;
+
+        // Binaural beat nodes (for freq1 in dual-freq phases, single freq in single-freq phases)
+        let binauralOsc1Left, binauralOsc1Right;
+        let binauralGain1;
+
+        // Isochronic tone nodes (for freq2 in dual-freq phases)
+        let isochronicOsc2, isochronicLFO2, isochronicGain2;
+
+        // Ultra-gamma isochronic tone (for freq3 in peak phase)
+        let isochronicOsc3, isochronicLFO3, isochronicGain3;
+
+        // Noise layer
+        let noiseBufferSource, noiseGainNode, noiseBuffer;
+
+        // Session state
+        let sessionActive = false;
+        let currentPhase = 0;
+        let sessionStartTime = 0;
+        let animationFrameId = null;
+        let transitionStartTime = 0;
+        let isInTransition = false;
+
+        // Current audio parameters (will be smoothly interpolated)
+        let currentFreq1 = 10;
+        let currentFreq2 = 0;
+        let currentFreq3 = 0;
+        let currentColor = { r: 33, g: 150, b: 243 };
+
+        // Fade in/out parameters
+        const SESSION_FADE_DURATION = 10; // seconds for session fade in/out
+        const PHASE_FADE_DURATION = 5; // seconds for phase fade in/out
+
+        // Visual brightness (for sine wave pulsing)
+        let visualBrightness = 0;
+
+        // Phase configuration
+        let phaseConfig = [];
+
+        // DOM elements
+        const warningScreen = document.getElementById('warning-screen');
+        const acceptWarningBtn = document.getElementById('accept-warning-btn');
+        const menu = document.getElementById('menu');
+        const toggleMenuBtn = document.getElementById('toggle-menu-btn');
+        const startSessionBtn = document.getElementById('start-session-btn');
+        const stopSessionBtn = document.getElementById('stop-session-btn');
+        const progressContainer = document.getElementById('progress-container');
+        const progressBar = document.getElementById('progress-bar');
+        const currentPhaseText = document.getElementById('current-phase-text');
+        const timeRemaining = document.getElementById('time-remaining');
+
+        // Warning screen handler
+        acceptWarningBtn.addEventListener('click', () => {
+            warningScreen.style.display = 'none';
+            initAudioContext();
+        });
+
+        // Initialize Audio Context
+        function initAudioContext() {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+            // Compressor
+            compressor = audioContext.createDynamicsCompressor();
+            compressor.threshold.value = -24;
+            compressor.knee.value = 30;
+            compressor.ratio.value = 12;
+            compressor.attack.value = 0.003;
+            compressor.release.value = 0.25;
+
+            // Master gain
+            masterGain = audioContext.createGain();
+            masterGain.gain.value = 0;
+
+            // Connect compressor -> master -> destination
+            compressor.connect(masterGain);
+            masterGain.connect(audioContext.destination);
+
+            // Initialize audio layers
+            initBinauralLayer();
+            initIsochronicLayer();
+            initUltraGammaLayer();
+            initNoiseLayer();
+        }
+
+        function initBinauralLayer() {
+            binauralOsc1Left = audioContext.createOscillator();
+            binauralOsc1Right = audioContext.createOscillator();
+
+            binauralOsc1Left.type = 'sine';
+            binauralOsc1Right.type = 'sine';
+
+            binauralGain1 = audioContext.createGain();
+            binauralGain1.gain.value = 0.2;
+
+            const merger = audioContext.createChannelMerger(2);
+
+            binauralOsc1Left.connect(merger, 0, 0);
+            binauralOsc1Right.connect(merger, 0, 1);
+            merger.connect(binauralGain1);
+            binauralGain1.connect(compressor);
+
+            binauralOsc1Left.start();
+            binauralOsc1Right.start();
+        }
+
+        function initIsochronicLayer() {
+            isochronicOsc2 = audioContext.createOscillator();
+            isochronicOsc2.type = 'sine';
+
+            isochronicLFO2 = audioContext.createOscillator();
+            isochronicLFO2.type = 'sine';
+
+            const isoAMGain = audioContext.createGain();
+            isoAMGain.gain.value = 0.5;
+
+            const isoLFOGain = audioContext.createGain();
+            isoLFOGain.gain.value = 0.5;
+
+            isochronicGain2 = audioContext.createGain();
+            isochronicGain2.gain.value = 0;
+
+            isochronicLFO2.connect(isoLFOGain);
+            isoLFOGain.connect(isoAMGain.gain);
+            isochronicOsc2.connect(isoAMGain);
+            isoAMGain.connect(isochronicGain2);
+            isochronicGain2.connect(compressor);
+
+            isochronicOsc2.start();
+            isochronicLFO2.start();
+        }
+
+        function initUltraGammaLayer() {
+            isochronicOsc3 = audioContext.createOscillator();
+            isochronicOsc3.type = 'sine';
+
+            isochronicLFO3 = audioContext.createOscillator();
+            isochronicLFO3.type = 'sine';
+
+            const isoAMGain3 = audioContext.createGain();
+            isoAMGain3.gain.value = 0.5;
+
+            const isoLFOGain3 = audioContext.createGain();
+            isoLFOGain3.gain.value = 0.5;
+
+            isochronicGain3 = audioContext.createGain();
+            isochronicGain3.gain.value = 0;
+
+            isochronicLFO3.connect(isoLFOGain3);
+            isoLFOGain3.connect(isoAMGain3.gain);
+            isochronicOsc3.connect(isoAMGain3);
+            isoAMGain3.connect(isochronicGain3);
+            isochronicGain3.connect(compressor);
+
+            isochronicOsc3.start();
+            isochronicLFO3.start();
+        }
+
+        function initNoiseLayer() {
+            noiseGainNode = audioContext.createGain();
+            noiseGainNode.gain.value = 0;
+            noiseGainNode.connect(compressor);
+            startNoiseSource();
+        }
+
+        function startNoiseSource() {
+            generateNoiseBuffer();
+            noiseBufferSource = audioContext.createBufferSource();
+            noiseBufferSource.buffer = noiseBuffer;
+            noiseBufferSource.loop = true;
+            noiseBufferSource.connect(noiseGainNode);
+            noiseBufferSource.start();
+        }
+
+        function generateNoiseBuffer() {
+            const bufferSize = audioContext.sampleRate * 2;
+            noiseBuffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
+            const output = noiseBuffer.getChannelData(0);
+
+            const maxChunkSize = 65536;
+            const randomBytes = new Uint8Array(bufferSize);
+            for (let offset = 0; offset < bufferSize; offset += maxChunkSize) {
+                const chunkSize = Math.min(maxChunkSize, bufferSize - offset);
+                const chunk = new Uint8Array(chunkSize);
+                crypto.getRandomValues(chunk);
+                randomBytes.set(chunk, offset);
+            }
+
+            const noiseType = document.getElementById('noise-type').value;
+
+            if (noiseType === 'white') {
+                for (let i = 0; i < bufferSize; i++) {
+                    output[i] = (randomBytes[i] / 127.5) - 1.0;
+                }
+            } else if (noiseType === 'pink') {
+                let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
+                for (let i = 0; i < bufferSize; i++) {
+                    const white = (randomBytes[i] / 127.5) - 1.0;
+                    b0 = 0.99886 * b0 + white * 0.0555179;
+                    b1 = 0.99332 * b1 + white * 0.0750759;
+                    b2 = 0.96900 * b2 + white * 0.1538520;
+                    b3 = 0.86650 * b3 + white * 0.3104856;
+                    b4 = 0.55000 * b4 + white * 0.5329522;
+                    b5 = -0.7616 * b5 - white * 0.0168980;
+                    output[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362) * 0.11;
+                    b6 = white * 0.115926;
+                }
+            } else if (noiseType === 'brown') {
+                let lastOut = 0;
+                for (let i = 0; i < bufferSize; i++) {
+                    const white = (randomBytes[i] / 127.5) - 1.0;
+                    output[i] = (lastOut + (0.02 * white)) / 1.02;
+                    lastOut = output[i];
+                    output[i] *= 3.5;
+                }
+            }
+
+            let max = 0;
+            for (let i = 0; i < bufferSize; i++) {
+                if (Math.abs(output[i]) > max) max = Math.abs(output[i]);
+            }
+            if (max > 0) {
+                for (let i = 0; i < bufferSize; i++) {
+                    output[i] /= max;
+                }
+            }
+        }
+
+        // Helper: Get brainwave type from frequency
+        function getBrainwaveType(freq) {
+            if (freq < 4) return ' (Delta)';
+            else if (freq < 8) return ' (Theta)';
+            else if (freq < 13) return ' (Alpha)';
+            else if (freq < 30) return ' (Beta)';
+            else return ' (Gamma)';
+        }
+
+        // Helper: Get optimal carrier frequency
+        function getOptimalCarrier(freq) {
+            return freq < 12 ? 250 : 400;
+        }
+
+        // Update all display values
+        function updateDisplays() {
+            // Phase 1
+            const p1f = parseFloat(document.getElementById('phase1-freq').value);
+            document.getElementById('phase1-freq-display').textContent = p1f.toFixed(1) + ' Hz' + getBrainwaveType(p1f);
+            document.getElementById('phase1-duration-display').textContent = document.getElementById('phase1-duration').value + ' min';
+
+            // Phase 2
+            const p2f1 = parseFloat(document.getElementById('phase2-freq1').value);
+            const p2f2 = parseFloat(document.getElementById('phase2-freq2').value);
+            document.getElementById('phase2-freq1-display').textContent = p2f1.toFixed(1) + ' Hz' + getBrainwaveType(p2f1);
+            document.getElementById('phase2-freq2-display').textContent = (p2f2 === 0 ? 'Off' : p2f2 + ' Hz' + getBrainwaveType(p2f2));
+            document.getElementById('phase2-duration-display').textContent = document.getElementById('phase2-duration').value + ' min';
+
+            // Phase 3
+            const p3f1 = parseFloat(document.getElementById('phase3-freq1').value);
+            const p3f2 = parseFloat(document.getElementById('phase3-freq2').value);
+            const p3f3 = parseFloat(document.getElementById('phase3-freq3').value);
+            document.getElementById('phase3-freq1-display').textContent = p3f1.toFixed(1) + ' Hz' + getBrainwaveType(p3f1);
+            document.getElementById('phase3-freq2-display').textContent = (p3f2 === 0 ? 'Off' : p3f2 + ' Hz' + getBrainwaveType(p3f2));
+            document.getElementById('phase3-freq3-display').textContent = (p3f3 === 0 ? 'Off' : p3f3 + ' Hz (Ultra-Gamma)');
+            document.getElementById('phase3-duration-display').textContent = document.getElementById('phase3-duration').value + ' min';
+
+            // Phase 4
+            const p4f = parseFloat(document.getElementById('phase4-freq').value);
+            document.getElementById('phase4-freq-display').textContent = p4f.toFixed(1) + ' Hz' + getBrainwaveType(p4f);
+            document.getElementById('phase4-duration-display').textContent = document.getElementById('phase4-duration').value + ' min';
+
+            // Global
+            document.getElementById('master-volume-display').textContent = document.getElementById('master-volume').value + '%';
+            document.getElementById('noise-volume-display').textContent = document.getElementById('noise-volume').value + '%';
+        }
+
+        // Sync slider and number inputs
+        function syncInputs(sliderId, inputId) {
+            const slider = document.getElementById(sliderId);
+            const input = document.getElementById(inputId);
+
+            slider.addEventListener('input', () => {
+                input.value = slider.value;
+                updateDisplays();
+            });
+
+            input.addEventListener('input', () => {
+                const val = parseFloat(input.value);
+                if (!isNaN(val) && val >= parseFloat(input.min) && val <= parseFloat(input.max)) {
+                    slider.value = val;
+                    updateDisplays();
+                }
+            });
+        }
+
+        // Sync all frequency inputs
+        syncInputs('phase1-freq', 'phase1-freq-input');
+        syncInputs('phase2-freq1', 'phase2-freq1-input');
+        syncInputs('phase2-freq2', 'phase2-freq2-input');
+        syncInputs('phase3-freq1', 'phase3-freq1-input');
+        syncInputs('phase3-freq2', 'phase3-freq2-input');
+        syncInputs('phase3-freq3', 'phase3-freq3-input');
+        syncInputs('phase4-freq', 'phase4-freq-input');
+
+        // Attach input listeners
+        document.querySelectorAll('input[type="range"]').forEach(input => {
+            input.addEventListener('input', updateDisplays);
+        });
+
+        // Noise type change
+        document.getElementById('noise-type').addEventListener('change', () => {
+            if (noiseBufferSource && audioContext) {
+                try {
+                    noiseBufferSource.stop();
+                    noiseBufferSource.disconnect();
+                } catch (e) {}
+                startNoiseSource();
+            }
+        });
+
+        // Preset configurations
+        const presets = {
+            'quick': {
+                name: 'Quick Focus (15min)',
+                phases: {
+                    phase1: { freq: 12, duration: 3, color: '#64B5F6' },
+                    phase2: { freq1: 10, freq2: 0, duration: 5, color: '#42A5F5' },
+                    phase3: { freq1: 10, freq2: 0, freq3: 0, duration: 5, color: '#2196F3' },
+                    phase4: { freq: 10, duration: 2, color: '#1E88E5' }
+                },
+                noise: { enabled: true, type: 'pink', volume: 25 }
+            },
+            'deep-theta': {
+                name: 'Deep Theta Journey (30min)',
+                phases: {
+                    phase1: { freq: 10, duration: 5, color: '#5C6BC0' },
+                    phase2: { freq1: 6, freq2: 40, duration: 8, color: '#7E57C2' },
+                    phase3: { freq1: 6, freq2: 40, freq3: 0, duration: 12, color: '#9C27B0' },
+                    phase4: { freq: 10, duration: 5, color: '#673AB7' }
+                },
+                noise: { enabled: true, type: 'pink', volume: 30 }
+            },
+            'gateway': {
+                name: 'Gateway Experience (60min)',
+                phases: {
+                    phase1: { freq: 12, duration: 10, color: '#4FC3F7' },
+                    phase2: { freq1: 6, freq2: 40, duration: 15, color: '#AB47BC' },
+                    phase3: { freq1: 4, freq2: 40, freq3: 100, duration: 25, color: '#FF6F00' },
+                    phase4: { freq: 10, duration: 10, color: '#26C6DA' }
+                },
+                noise: { enabled: true, type: 'pink', volume: 35 }
+            }
+        };
+
+        // Preset button handlers
+        document.querySelectorAll('.preset-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const presetName = btn.getAttribute('data-preset');
+                const preset = presets[presetName];
+
+                if (preset) {
+                    // Phase 1
+                    document.getElementById('phase1-freq').value = preset.phases.phase1.freq;
+                    document.getElementById('phase1-freq-input').value = preset.phases.phase1.freq;
+                    document.getElementById('phase1-duration').value = preset.phases.phase1.duration;
+                    document.getElementById('phase1-color').value = preset.phases.phase1.color;
+
+                    // Phase 2
+                    document.getElementById('phase2-freq1').value = preset.phases.phase2.freq1;
+                    document.getElementById('phase2-freq1-input').value = preset.phases.phase2.freq1;
+                    document.getElementById('phase2-freq2').value = preset.phases.phase2.freq2;
+                    document.getElementById('phase2-freq2-input').value = preset.phases.phase2.freq2;
+                    document.getElementById('phase2-duration').value = preset.phases.phase2.duration;
+                    document.getElementById('phase2-color').value = preset.phases.phase2.color;
+
+                    // Phase 3
+                    document.getElementById('phase3-freq1').value = preset.phases.phase3.freq1;
+                    document.getElementById('phase3-freq1-input').value = preset.phases.phase3.freq1;
+                    document.getElementById('phase3-freq2').value = preset.phases.phase3.freq2;
+                    document.getElementById('phase3-freq2-input').value = preset.phases.phase3.freq2;
+                    document.getElementById('phase3-freq3').value = preset.phases.phase3.freq3;
+                    document.getElementById('phase3-freq3-input').value = preset.phases.phase3.freq3;
+                    document.getElementById('phase3-duration').value = preset.phases.phase3.duration;
+                    document.getElementById('phase3-color').value = preset.phases.phase3.color;
+
+                    // Phase 4
+                    document.getElementById('phase4-freq').value = preset.phases.phase4.freq;
+                    document.getElementById('phase4-freq-input').value = preset.phases.phase4.freq;
+                    document.getElementById('phase4-duration').value = preset.phases.phase4.duration;
+                    document.getElementById('phase4-color').value = preset.phases.phase4.color;
+
+                    // Noise settings
+                    document.getElementById('noise-enabled').checked = preset.noise.enabled;
+                    document.getElementById('noise-type').value = preset.noise.type;
+                    document.getElementById('noise-volume').value = preset.noise.volume;
+
+                    // Update displays
+                    updateDisplays();
+
+                    // Visual feedback
+                    btn.style.transform = 'scale(0.95)';
+                    setTimeout(() => {
+                        btn.style.transform = '';
+                    }, 150);
+                }
+            });
+        });
+
+        // Toggle menu
+        toggleMenuBtn.addEventListener('click', () => {
+            menu.classList.toggle('hidden');
+        });
+
+        // Start session
+        startSessionBtn.addEventListener('click', () => {
+            startSession();
+        });
+
+        // Stop session
+        stopSessionBtn.addEventListener('click', () => {
+            stopSession();
+        });
+
+        function startSession() {
+            if (audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+
+            // Build phase configuration
+            phaseConfig = [
+                {
+                    name: 'Preparation',
+                    freq1: parseFloat(document.getElementById('phase1-freq').value),
+                    freq2: 0,
+                    freq3: 0,
+                    duration: parseFloat(document.getElementById('phase1-duration').value) * 60,
+                    color: document.getElementById('phase1-color').value
+                },
+                {
+                    name: 'Ascent',
+                    freq1: parseFloat(document.getElementById('phase2-freq1').value),
+                    freq2: parseFloat(document.getElementById('phase2-freq2').value),
+                    freq3: 0,
+                    duration: parseFloat(document.getElementById('phase2-duration').value) * 60,
+                    color: document.getElementById('phase2-color').value
+                },
+                {
+                    name: 'Peak / Sustain',
+                    freq1: parseFloat(document.getElementById('phase3-freq1').value),
+                    freq2: parseFloat(document.getElementById('phase3-freq2').value),
+                    freq3: parseFloat(document.getElementById('phase3-freq3').value),
+                    duration: parseFloat(document.getElementById('phase3-duration').value) * 60,
+                    color: document.getElementById('phase3-color').value
+                },
+                {
+                    name: 'Return',
+                    freq1: parseFloat(document.getElementById('phase4-freq').value),
+                    freq2: 0,
+                    freq3: 0,
+                    duration: parseFloat(document.getElementById('phase4-duration').value) * 60,
+                    color: document.getElementById('phase4-color').value
+                }
+            ];
+
+            sessionActive = true;
+            currentPhase = 0;
+            sessionStartTime = Date.now();
+            isInTransition = false;
+
+            // Set initial frequencies
+            currentFreq1 = phaseConfig[0].freq1;
+            currentFreq2 = phaseConfig[0].freq2;
+            currentFreq3 = phaseConfig[0].freq3;
+            currentColor = hexToRgb(phaseConfig[0].color);
+
+            updateAudioFrequencies(currentFreq1, currentFreq2, currentFreq3);
+
+            // Enable master volume
+            const masterVol = parseFloat(document.getElementById('master-volume').value) / 100;
+            masterGain.gain.value = masterVol;
+
+            // Enable noise if toggled
+            updateNoiseGain();
+
+            // UI changes
+            menu.classList.add('hidden');
+            progressContainer.classList.add('active');
+            startSessionBtn.style.display = 'none';
+            stopSessionBtn.style.display = 'block';
+
+            // Start animation loop
+            sessionLoop();
+        }
+
+        function stopSession() {
+            sessionActive = false;
+
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+                animationFrameId = null;
+            }
+
+            // Mute audio
+            masterGain.gain.value = 0;
+
+            // Reset UI
+            progressContainer.classList.remove('active');
+            startSessionBtn.style.display = 'block';
+            stopSessionBtn.style.display = 'none';
+            document.body.style.backgroundColor = '#000000';
+
+            // Clear phase labels
+            for (let i = 1; i <= 4; i++) {
+                document.getElementById('label-phase' + i).classList.remove('active');
+            }
+        }
+
+        function sessionLoop() {
+            if (!sessionActive) return;
+
+            const now = Date.now();
+            const elapsed = (now - sessionStartTime) / 1000; // seconds
+
+            // Calculate total session duration and current position
+            let totalDuration = 0;
+            for (let i = 0; i < phaseConfig.length; i++) {
+                totalDuration += phaseConfig[i].duration;
+            }
+
+            // Find current phase
+            let cumulativeTime = 0;
+            let phaseIndex = 0;
+            let timeInPhase = 0;
+
+            for (let i = 0; i < phaseConfig.length; i++) {
+                if (elapsed < cumulativeTime + phaseConfig[i].duration) {
+                    phaseIndex = i;
+                    timeInPhase = elapsed - cumulativeTime;
+                    break;
+                }
+                cumulativeTime += phaseConfig[i].duration;
+            }
+
+            // Check if session is complete
+            if (elapsed >= totalDuration) {
+                stopSession();
+                return;
+            }
+
+            // Update current phase if changed
+            if (phaseIndex !== currentPhase) {
+                currentPhase = phaseIndex;
+                transitionStartTime = now;
+                isInTransition = true;
+            }
+
+            const phase = phaseConfig[phaseIndex];
+
+            // Smooth transition logic (60 seconds for gentler changes)
+            const transitionDuration = 60; // seconds
+            let transitionProgress = 1;
+
+            if (isInTransition) {
+                const transitionElapsed = (now - transitionStartTime) / 1000;
+                if (transitionElapsed < transitionDuration) {
+                    transitionProgress = easeInOutSine(transitionElapsed / transitionDuration);
+                } else {
+                    isInTransition = false;
+                }
+            }
+
+            // Interpolate frequencies if in transition
+            if (isInTransition && phaseIndex > 0) {
+                const prevPhase = phaseConfig[phaseIndex - 1];
+                currentFreq1 = lerp(prevPhase.freq1, phase.freq1, transitionProgress);
+                currentFreq2 = lerp(prevPhase.freq2, phase.freq2, transitionProgress);
+                currentFreq3 = lerp(prevPhase.freq3, phase.freq3, transitionProgress);
+
+                const prevColor = hexToRgb(prevPhase.color);
+                const nextColor = hexToRgb(phase.color);
+                currentColor = {
+                    r: lerp(prevColor.r, nextColor.r, transitionProgress),
+                    g: lerp(prevColor.g, nextColor.g, transitionProgress),
+                    b: lerp(prevColor.b, nextColor.b, transitionProgress)
+                };
+            } else {
+                currentFreq1 = phase.freq1;
+                currentFreq2 = phase.freq2;
+                currentFreq3 = phase.freq3;
+                currentColor = hexToRgb(phase.color);
+            }
+
+            // Calculate fade multipliers
+            let sessionFade = 1.0;
+            let phaseFade = 1.0;
+
+            // Session-level fade in (first 10 seconds)
+            if (elapsed < SESSION_FADE_DURATION) {
+                sessionFade = easeInOutSine(elapsed / SESSION_FADE_DURATION);
+            }
+
+            // Session-level fade out (last 10 seconds)
+            const timeUntilEnd = totalDuration - elapsed;
+            if (timeUntilEnd < SESSION_FADE_DURATION) {
+                sessionFade = easeInOutSine(timeUntilEnd / SESSION_FADE_DURATION);
+            }
+
+            // Phase-level fade in (first 5 seconds of each phase)
+            if (timeInPhase < PHASE_FADE_DURATION) {
+                phaseFade = easeInOutSine(timeInPhase / PHASE_FADE_DURATION);
+            }
+
+            // Phase-level fade out (last 5 seconds of each phase)
+            const timeUntilPhaseEnd = phase.duration - timeInPhase;
+            if (timeUntilPhaseEnd < PHASE_FADE_DURATION) {
+                phaseFade = easeInOutSine(timeUntilPhaseEnd / PHASE_FADE_DURATION);
+            }
+
+            // Combine fades (multiplicative)
+            const combinedFade = sessionFade * phaseFade;
+
+            // Apply fade to frequencies
+            const fadedFreq1 = currentFreq1 * combinedFade;
+            const fadedFreq2 = currentFreq2 * combinedFade;
+            const fadedFreq3 = currentFreq3 * combinedFade;
+
+            // Update audio frequencies with faded values
+            updateAudioFrequencies(fadedFreq1, fadedFreq2, fadedFreq3);
+
+            // Update visual (sine wave pulsing) with fade applied
+            updateVisual(elapsed, combinedFade);
+
+            // Update UI
+            updateProgressUI(elapsed, totalDuration, phaseIndex, timeInPhase, phase);
+
+            animationFrameId = requestAnimationFrame(sessionLoop);
+        }
+
+        function updateAudioFrequencies(freq1, freq2, freq3) {
+            const carrier1 = getOptimalCarrier(freq1);
+
+            // Binaural beat for freq1
+            binauralOsc1Left.frequency.value = carrier1 - (freq1 / 2);
+            binauralOsc1Right.frequency.value = carrier1 + (freq1 / 2);
+
+            // Isochronic tone for freq2 (if > 0)
+            if (freq2 > 0) {
+                const carrier2 = getOptimalCarrier(freq2);
+                isochronicOsc2.frequency.value = carrier2;
+                isochronicLFO2.frequency.value = freq2;
+                isochronicGain2.gain.value = 0.12; // Slightly reduced for better balance
+            } else {
+                isochronicGain2.gain.value = 0;
+            }
+
+            // Isochronic tone for freq3 (ultra-gamma, if > 0)
+            if (freq3 > 0) {
+                const carrier3 = getOptimalCarrier(freq3);
+                isochronicOsc3.frequency.value = carrier3;
+                isochronicLFO3.frequency.value = freq3;
+                isochronicGain3.gain.value = 0.12; // Increased to match freq2 for balanced triple-layer
+            } else {
+                isochronicGain3.gain.value = 0;
+            }
+        }
+
+        function updateVisual(elapsed, fade) {
+            // Sine wave brightness pulsing at freq1
+            const frequency = currentFreq1;
+            const sinValue = Math.sin(elapsed * frequency * 2 * Math.PI);
+            visualBrightness = (sinValue + 1) / 2; // 0 to 1
+
+            // Apply combined fade to visual brightness
+            const fadedBrightness = visualBrightness * fade;
+
+            // Apply color with faded brightness
+            const r = Math.round(currentColor.r * fadedBrightness);
+            const g = Math.round(currentColor.g * fadedBrightness);
+            const b = Math.round(currentColor.b * fadedBrightness);
+
+            document.body.style.backgroundColor = `rgb(${r}, ${g}, ${b})`;
+        }
+
+        function updateProgressUI(elapsed, totalDuration, phaseIndex, timeInPhase, phase) {
+            // Progress bar
+            const progressPercent = (elapsed / totalDuration) * 100;
+            progressBar.style.width = progressPercent + '%';
+
+            // Current phase text
+            currentPhaseText.textContent = `Phase ${phaseIndex + 1}: ${phase.name}`;
+
+            // Time remaining
+            const phaseRemaining = phase.duration - timeInPhase;
+            const totalRemaining = totalDuration - elapsed;
+
+            const phaseMin = Math.floor(phaseRemaining / 60);
+            const phaseSec = Math.floor(phaseRemaining % 60);
+            const totalMin = Math.floor(totalRemaining / 60);
+            const totalSec = Math.floor(totalRemaining % 60);
+
+            timeRemaining.textContent = `Phase: ${phaseMin}:${phaseSec.toString().padStart(2, '0')} | Total: ${totalMin}:${totalSec.toString().padStart(2, '0')}`;
+
+            // Update phase labels
+            for (let i = 1; i <= 4; i++) {
+                const label = document.getElementById('label-phase' + i);
+                if (i - 1 === phaseIndex) {
+                    label.classList.add('active');
+                } else {
+                    label.classList.remove('active');
+                }
+            }
+        }
+
+        function updateNoiseGain() {
+            if (noiseGainNode) {
+                const enabled = document.getElementById('noise-enabled').checked;
+                const volume = parseFloat(document.getElementById('noise-volume').value) / 100;
+                noiseGainNode.gain.value = enabled ? (0.15 * volume) : 0;
+            }
+        }
+
+        document.getElementById('noise-enabled').addEventListener('change', updateNoiseGain);
+        document.getElementById('noise-volume').addEventListener('input', updateNoiseGain);
+
+        // Utility functions
+        function lerp(a, b, t) {
+            return a + (b - a) * t;
+        }
+
+        function easeInOutCubic(t) {
+            return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+        }
+
+        function easeInOutSine(t) {
+            return -(Math.cos(Math.PI * t) - 1) / 2;
+        }
+
+        function hexToRgb(hex) {
+            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return result ? {
+                r: parseInt(result[1], 16),
+                g: parseInt(result[2], 16),
+                b: parseInt(result[3], 16)
+            } : { r: 0, g: 0, b: 0 };
+        }
+
+        // Initialize displays
+        updateDisplays();
+    </script>
+</body>
+</html>
