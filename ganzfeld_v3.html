@@ -32,7 +32,7 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            padding: 20px;
+            padding: 5px;
             z-index: 10000;
         }
 
@@ -70,7 +70,7 @@
             top: 0;
             left: 0;
             width: 100%;
-            max-width: 450px;
+            max-width: 400px;
             height: 100%;
             background: rgba(20, 20, 20, 0.98);
             color: white;
@@ -536,6 +536,13 @@
                 <input type="range" id="noise-volume" min="0" max="100" value="30" step="1" style="margin-top: 10px;">
                 <div class="value-display" id="noise-volume-display">30%</div>
             </div>
+
+            <div class="control-group">
+                <label class="checkbox-toggle" style="cursor: pointer;">
+                    <input type="checkbox" id="phase-separation" checked>
+                    <span>Phase Separation (fade to silence between phases)</span>
+                </label>
+            </div>
         </div>
 
         <!-- Phase 1: Preparation -->
@@ -556,8 +563,8 @@
             </div>
 
             <div class="control-group">
-                <label>Duration (minutes)</label>
-                <input type="range" id="phase1-duration" min="1" max="30" value="5" step="1">
+                <label>Duration (minutes) - set to 0 to skip phase</label>
+                <input type="range" id="phase1-duration" min="0" max="30" value="5" step="1">
                 <div class="value-display" id="phase1-duration-display">5 min</div>
             </div>
 
@@ -597,8 +604,8 @@
             </div>
 
             <div class="control-group">
-                <label>Duration (minutes)</label>
-                <input type="range" id="phase2-duration" min="1" max="30" value="10" step="1">
+                <label>Duration (minutes) - set to 0 to skip phase</label>
+                <input type="range" id="phase2-duration" min="0" max="30" value="10" step="1">
                 <div class="value-display" id="phase2-duration-display">10 min</div>
             </div>
 
@@ -648,8 +655,8 @@
             </div>
 
             <div class="control-group">
-                <label>Duration (minutes)</label>
-                <input type="range" id="phase3-duration" min="1" max="60" value="15" step="1">
+                <label>Duration (minutes) - set to 0 to skip phase</label>
+                <input type="range" id="phase3-duration" min="0" max="60" value="15" step="1">
                 <div class="value-display" id="phase3-duration-display">15 min</div>
             </div>
 
@@ -677,8 +684,8 @@
             </div>
 
             <div class="control-group">
-                <label>Duration (minutes)</label>
-                <input type="range" id="phase4-duration" min="1" max="30" value="10" step="1">
+                <label>Duration (minutes) - set to 0 to skip phase</label>
+                <input type="range" id="phase4-duration" min="0" max="30" value="10" step="1">
                 <div class="value-display" id="phase4-duration-display">10 min</div>
             </div>
 
@@ -961,29 +968,33 @@
         function updateDisplays() {
             // Phase 1
             const p1f = parseFloat(document.getElementById('phase1-freq').value);
+            const p1d = parseFloat(document.getElementById('phase1-duration').value);
             document.getElementById('phase1-freq-display').textContent = p1f.toFixed(1) + ' Hz' + getBrainwaveType(p1f);
-            document.getElementById('phase1-duration-display').textContent = document.getElementById('phase1-duration').value + ' min';
+            document.getElementById('phase1-duration-display').textContent = (p1d === 0 ? 'Skipped' : p1d + ' min');
 
             // Phase 2
             const p2f1 = parseFloat(document.getElementById('phase2-freq1').value);
             const p2f2 = parseFloat(document.getElementById('phase2-freq2').value);
+            const p2d = parseFloat(document.getElementById('phase2-duration').value);
             document.getElementById('phase2-freq1-display').textContent = p2f1.toFixed(1) + ' Hz' + getBrainwaveType(p2f1);
             document.getElementById('phase2-freq2-display').textContent = (p2f2 === 0 ? 'Off' : p2f2 + ' Hz' + getBrainwaveType(p2f2));
-            document.getElementById('phase2-duration-display').textContent = document.getElementById('phase2-duration').value + ' min';
+            document.getElementById('phase2-duration-display').textContent = (p2d === 0 ? 'Skipped' : p2d + ' min');
 
             // Phase 3
             const p3f1 = parseFloat(document.getElementById('phase3-freq1').value);
             const p3f2 = parseFloat(document.getElementById('phase3-freq2').value);
             const p3f3 = parseFloat(document.getElementById('phase3-freq3').value);
+            const p3d = parseFloat(document.getElementById('phase3-duration').value);
             document.getElementById('phase3-freq1-display').textContent = p3f1.toFixed(1) + ' Hz' + getBrainwaveType(p3f1);
             document.getElementById('phase3-freq2-display').textContent = (p3f2 === 0 ? 'Off' : p3f2 + ' Hz' + getBrainwaveType(p3f2));
             document.getElementById('phase3-freq3-display').textContent = (p3f3 === 0 ? 'Off' : p3f3 + ' Hz (Ultra-Gamma)');
-            document.getElementById('phase3-duration-display').textContent = document.getElementById('phase3-duration').value + ' min';
+            document.getElementById('phase3-duration-display').textContent = (p3d === 0 ? 'Skipped' : p3d + ' min');
 
             // Phase 4
             const p4f = parseFloat(document.getElementById('phase4-freq').value);
+            const p4d = parseFloat(document.getElementById('phase4-duration').value);
             document.getElementById('phase4-freq-display').textContent = p4f.toFixed(1) + ' Hz' + getBrainwaveType(p4f);
-            document.getElementById('phase4-duration-display').textContent = document.getElementById('phase4-duration').value + ' min';
+            document.getElementById('phase4-duration-display').textContent = (p4d === 0 ? 'Skipped' : p4d + ' min');
 
             // Global
             document.getElementById('master-volume-display').textContent = document.getElementById('master-volume').value + '%';
@@ -1189,7 +1200,8 @@
             currentFreq3 = phaseConfig[0].freq3;
             currentColor = hexToRgb(phaseConfig[0].color);
 
-            updateAudioFrequencies(currentFreq1, currentFreq2, currentFreq3);
+            // Initialize audio with zero volume (will fade in during session loop)
+            updateAudioFrequencies(0, 0, 0, phaseConfig[0].freq1, phaseConfig[0].freq2, phaseConfig[0].freq3, 0);
 
             // Enable master volume
             const masterVol = parseFloat(document.getElementById('master-volume').value) / 100;
@@ -1321,15 +1333,19 @@
                 sessionFade = easeInOutSine(timeUntilEnd / SESSION_FADE_DURATION);
             }
 
-            // Phase-level fade in (first 5 seconds of each phase) - only if not during session fade
-            if (timeInPhase < PHASE_FADE_DURATION && elapsed >= SESSION_FADE_DURATION) {
-                phaseFade = easeInOutSine(timeInPhase / PHASE_FADE_DURATION);
-            }
+            // Phase-level fade in/out only if phase separation is enabled
+            const phaseSeparationEnabled = document.getElementById('phase-separation').checked;
+            if (phaseSeparationEnabled) {
+                // Phase-level fade in (first 5 seconds of each phase) - only if not during session fade
+                if (timeInPhase < PHASE_FADE_DURATION && elapsed >= SESSION_FADE_DURATION) {
+                    phaseFade = easeInOutSine(timeInPhase / PHASE_FADE_DURATION);
+                }
 
-            // Phase-level fade out (last 5 seconds of each phase) - only if not during session fade out
-            const timeUntilPhaseEnd = phase.duration - timeInPhase;
-            if (timeUntilPhaseEnd < PHASE_FADE_DURATION && timeUntilEnd >= SESSION_FADE_DURATION) {
-                phaseFade = easeInOutSine(timeUntilPhaseEnd / PHASE_FADE_DURATION);
+                // Phase-level fade out (last 5 seconds of each phase) - only if not during session fade out
+                const timeUntilPhaseEnd = phase.duration - timeInPhase;
+                if (timeUntilPhaseEnd < PHASE_FADE_DURATION && timeUntilEnd >= SESSION_FADE_DURATION) {
+                    phaseFade = easeInOutSine(timeUntilPhaseEnd / PHASE_FADE_DURATION);
+                }
             }
 
             // Combine fades (multiplicative)
@@ -1341,8 +1357,8 @@
             const fadedFreq3 = currentFreq3 * combinedFade;
 
             // Update audio frequencies with faded values
-            // Pass current phase's target frequencies so gain can scale proportionally
-            updateAudioFrequencies(fadedFreq1, fadedFreq2, fadedFreq3, phase.freq2, phase.freq3);
+            // Pass current phase's target frequencies for carrier selection to avoid jumps
+            updateAudioFrequencies(fadedFreq1, fadedFreq2, fadedFreq3, phase.freq1, phase.freq2, phase.freq3, combinedFade);
 
             // Update visual (sine wave pulsing) with fade applied
             updateVisual(elapsed, combinedFade);
@@ -1353,38 +1369,42 @@
             animationFrameId = requestAnimationFrame(sessionLoop);
         }
 
-        function updateAudioFrequencies(freq1, freq2, freq3, targetFreq2, targetFreq3) {
-            const carrier1 = getOptimalCarrier(Math.max(freq1, 1));
+        function updateAudioFrequencies(freq1, freq2, freq3, targetFreq1, targetFreq2, targetFreq3, fade) {
+            // Use target frequency for carrier to avoid jumps during interpolation
+            const carrier1 = getOptimalCarrier(Math.max(targetFreq1, 1));
 
-            // Binaural beat for freq1
+            // Binaural beat for freq1 - apply fade to gain
             binauralOsc1Left.frequency.value = carrier1 - (freq1 / 2);
             binauralOsc1Right.frequency.value = carrier1 + (freq1 / 2);
+            binauralGain1.gain.value = 0.2 * fade; // Apply fade to binaural gain
 
-            // Isochronic tone for freq2 - smooth gain proportional to frequency
+            // Isochronic tone for freq2 - smooth gain proportional to frequency and fade
             // When freq2 is interpolating from 0→40, gain smoothly goes 0→0.12
             if (targetFreq2 > 0) {
-                const safeFreq2 = Math.max(freq2, 0.1); // Avoid zero frequency for oscillator
+                const safeFreq2 = Math.max(Math.abs(freq2), 0.1); // Avoid zero frequency for oscillator
                 const carrier2 = getOptimalCarrier(targetFreq2);
                 isochronicOsc2.frequency.value = carrier2;
                 isochronicLFO2.frequency.value = safeFreq2;
 
-                // Gain is proportional to how close we are to the target frequency
-                const gainRatio = Math.abs(freq2) / Math.max(targetFreq2, 0.1);
-                isochronicGain2.gain.value = 0.12 * gainRatio;
+                // Gain is proportional to how close we are to the target frequency, and also affected by fade
+                const gainRatio = Math.abs(freq2) / Math.max(Math.abs(targetFreq2), 0.1);
+                const finalGain = 0.12 * gainRatio * fade;
+                isochronicGain2.gain.value = isFinite(finalGain) ? finalGain : 0;
             } else {
                 isochronicGain2.gain.value = 0;
             }
 
-            // Isochronic tone for freq3 - smooth gain proportional to frequency
+            // Isochronic tone for freq3 - smooth gain proportional to frequency and fade
             if (targetFreq3 > 0) {
-                const safeFreq3 = Math.max(freq3, 0.1); // Avoid zero frequency for oscillator
+                const safeFreq3 = Math.max(Math.abs(freq3), 0.1); // Avoid zero frequency for oscillator
                 const carrier3 = getOptimalCarrier(targetFreq3);
                 isochronicOsc3.frequency.value = carrier3;
                 isochronicLFO3.frequency.value = safeFreq3;
 
-                // Gain is proportional to how close we are to the target frequency
-                const gainRatio = Math.abs(freq3) / Math.max(targetFreq3, 0.1);
-                isochronicGain3.gain.value = 0.12 * gainRatio;
+                // Gain is proportional to how close we are to the target frequency, and also affected by fade
+                const gainRatio = Math.abs(freq3) / Math.max(Math.abs(targetFreq3), 0.1);
+                const finalGain = 0.12 * gainRatio * fade;
+                isochronicGain3.gain.value = isFinite(finalGain) ? finalGain : 0;
             } else {
                 isochronicGain3.gain.value = 0;
             }
